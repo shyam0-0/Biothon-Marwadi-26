@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Do not back up auth tokens or cached health data to the cloud. -->
+    <exclude domain="sharedpref" path="." />
+</full-backup-content>

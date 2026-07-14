@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors the Compose palette in ui/theme/Color.kt for window-level chrome. -->
+    <color name="md_primary">#1E6FD9</color>
+    <color name="md_surface">#F6F9FE</color>
+    <color name="md_on_surface">#0F1B2D</color>
+    <color name="ic_launcher_background">#1E6FD9</color>
+</resources>

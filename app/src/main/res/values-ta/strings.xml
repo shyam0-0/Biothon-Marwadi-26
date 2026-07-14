@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">MedFusion AI</string>
+    <string name="app_tagline">உங்கள் அறிவார்ந்த சுகாதார துணை</string>
+
+    <!-- Roles -->
+    <string name="role_patient">நோயாளி</string>
+    <string name="role_doctor">மருத்துவர்</string>
+
+    <!-- Auth -->
+    <string name="login">உள்நுழைக</string>
+    <string name="register">கணக்கை உருவாக்கு</string>
+    <string name="email">மின்னஞ்சல்</string>
+    <string name="password">கடவுச்சொல்</string>
+    <string name="full_name">முழு பெயர்</string>
+    <string name="confirm_password">கடவுச்சொல்லை உறுதிப்படுத்தவும்</string>
+    <string name="dont_have_account">கணக்கு இல்லையா? பதிவு செய்யவும்</string>
+    <string name="already_have_account">ஏற்கனவே கணக்கு உள்ளதா? உள்நுழைக</string>
+    <string name="patient_login_title">நோயாளி உள்நுழைவு</string>
+    <string name="doctor_login_title">மருத்துவர் உள்நுழைவு</string>
+
+    <!-- Common -->
+    <string name="retry">மீண்டும் முயற்சிக்கவும்</string>
+    <string name="cancel">ரத்து செய்</string>
+    <string name="continue_action">தொடரவும்</string>
+    <string name="loading">தயவுசெய்து காத்திருக்கவும்…</string>
+    <string name="generic_error">ஏதோ தவறு ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.</string>
+    <string name="no_connection">இணைய இணைப்பு இல்லை.</string>
+
+    <string name="ai_disclaimer">இது AI உதவியுடன் கூடிய தகவல், நோயறிதல் அல்ல. உங்கள் மருத்துவரை அணுகவும்.</string>
+
+    <!-- Settings / language -->
+    <string name="settings">அமைப்புகள்</string>
+    <string name="language">மொழி</string>
+    <string name="language_english">English</string>
+    <string name="language_hindi">हिन्दी (Hindi)</string>
+    <string name="language_tamil">தமிழ் (Tamil)</string>
+    <string name="language_description">ஆப் மற்றும் AI பதில்களுக்கான மொழியைத் தேர்ந்தெடுக்கவும்.</string>
+</resources>

@@ -1,0 +1,39 @@
+<resources>
+    <string name="app_name">MedFusion AI</string>
+    <string name="app_tagline">Your intelligent healthcare companion</string>
+
+    <!-- Roles -->
+    <string name="role_patient">Patient</string>
+    <string name="role_doctor">Doctor</string>
+
+    <!-- Auth -->
+    <string name="login">Log in</string>
+    <string name="register">Create account</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="full_name">Full name</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="dont_have_account">Don\'t have an account? Sign up</string>
+    <string name="already_have_account">Already have an account? Log in</string>
+    <string name="patient_login_title">Patient Sign In</string>
+    <string name="doctor_login_title">Doctor Sign In</string>
+
+    <!-- Common -->
+    <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
+    <string name="continue_action">Continue</string>
+    <string name="loading">Please wait…</string>
+    <string name="generic_error">Something went wrong. Please try again.</string>
+    <string name="no_connection">No internet connection.</string>
+
+    <!-- Disclaimer used across AI screens -->
+    <string name="ai_disclaimer">This is an AI-assisted insight, not a diagnosis. Please consult your assigned doctor.</string>
+
+    <!-- Settings / language -->
+    <string name="settings">Settings</string>
+    <string name="language">Language</string>
+    <string name="language_english">English</string>
+    <string name="language_hindi">हिन्दी (Hindi)</string>
+    <string name="language_tamil">தமிழ் (Tamil)</string>
+    <string name="language_description">Choose the language for the app and AI responses.</string>
+</resources>

@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">MedFusion AI</string>
+    <string name="app_tagline">आपका बुद्धिमान स्वास्थ्य साथी</string>
+
+    <!-- Roles -->
+    <string name="role_patient">रोगी</string>
+    <string name="role_doctor">डॉक्टर</string>
+
+    <!-- Auth -->
+    <string name="login">लॉग इन करें</string>
+    <string name="register">खाता बनाएँ</string>
+    <string name="email">ईमेल</string>
+    <string name="password">पासवर्ड</string>
+    <string name="full_name">पूरा नाम</string>
+    <string name="confirm_password">पासवर्ड की पुष्टि करें</string>
+    <string name="dont_have_account">खाता नहीं है? साइन अप करें</string>
+    <string name="already_have_account">पहले से खाता है? लॉग इन करें</string>
+    <string name="patient_login_title">रोगी साइन इन</string>
+    <string name="doctor_login_title">डॉक्टर साइन इन</string>
+
+    <!-- Common -->
+    <string name="retry">पुनः प्रयास करें</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="continue_action">जारी रखें</string>
+    <string name="loading">कृपया प्रतीक्षा करें…</string>
+    <string name="generic_error">कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।</string>
+    <string name="no_connection">कोई इंटरनेट कनेक्शन नहीं।</string>
+
+    <string name="ai_disclaimer">यह एक AI-सहायता प्राप्त जानकारी है, निदान नहीं। कृपया अपने नियुक्त डॉक्टर से परामर्श करें।</string>
+
+    <!-- Settings / language -->
+    <string name="settings">सेटिंग्स</string>
+    <string name="language">भाषा</string>
+    <string name="language_english">English</string>
+    <string name="language_hindi">हिन्दी (Hindi)</string>
+    <string name="language_tamil">தமிழ் (Tamil)</string>
+    <string name="language_description">ऐप और AI उत्तरों के लिए भाषा चुनें।</string>
+</resources>
