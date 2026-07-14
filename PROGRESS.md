@@ -20,10 +20,23 @@ Tracking implementation against `plan.md` (phases 0–12).
 
 **All phases (0–12) implemented.** See the feature notes below.
 
-## Setup required before first run
-- Replace `app/google-services.json` with a real one (Firebase project, package `com.medfusion.ai`); enable Email/Password Auth, Firestore, Storage.
-- Open in Android Studio and let it generate the Gradle wrapper jar (or run `gradle wrapper`).
-- Debug builds fall back to on-device mock AI when the FastAPI backend is unreachable, so the full journey is demoable without the backend.
+## Running it
+
+### Demo Mode (no setup — just press Run) ✅
+Debug builds ship with `DEMO_MODE = true`: every repository is replaced by an
+in-memory fake (seeded with sample data, powered by the mock AI engine), so the
+**entire app runs with no Firebase and no backend**. Just build & run on an emulator.
+- Log in with **any** email/password. Patient sign-in → patient app; Doctor sign-in → doctor app.
+- The doctor dashboard is pre-seeded with one patient request (with AI pre-read).
+- Triage, upload, analysis, result, PDF download, booking, video permissions, care
+  companion, and the vitals emergency flow all work end-to-end against the fakes.
+
+### Going live (real Firebase + backend)
+- Set `DEMO_MODE = false` in the debug block of `app/build.gradle.kts`.
+- Replace `app/google-services.json` with a real one (Firebase project, package
+  `com.medfusion.ai`); enable Email/Password Auth, Firestore, Storage.
+- Point `API_BASE_URL` at your FastAPI backend (or keep `USE_MOCK_AI_FALLBACK` on).
+- Let Android Studio generate the Gradle wrapper jar (or run `gradle wrapper`).
 
 ## Phase 0 — delivered
 - Gradle (version catalog, root + app build scripts, KSP, Hilt, google-services).

@@ -1,13 +1,19 @@
 *.iml
+
 .gradle/
-/local.properties
-/.idea/
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+.idea/
+
 local.properties
+/local.properties
+
+/build/
+/app/build/
+
+captures/
+.externalNativeBuild/
+.cxx/
+
+.DS_Store
 
 # Keep the real Firebase config out of version control; commit your own locally.
 # app/google-services.json

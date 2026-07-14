@@ -24,6 +24,9 @@ android {
         // Base URL of the FastAPI backend. Override per build type / local.properties.
         buildConfigField("String", "API_BASE_URL", "\"https://api.medfusion.ai/\"")
         buildConfigField("boolean", "USE_MOCK_AI_FALLBACK", "false")
+        // DEMO_MODE swaps all repositories for in-memory fakes (no Firebase/backend
+        // needed) so the full app can be run and demoed with zero setup.
+        buildConfigField("boolean", "DEMO_MODE", "false")
     }
 
     buildTypes {
@@ -35,11 +38,15 @@ android {
             // Fall back to on-device mock AI when the backend is unreachable, so
             // the full UI journey is demoable before FastAPI is running.
             buildConfigField("boolean", "USE_MOCK_AI_FALLBACK", "true")
+            // Run with in-memory fakes — no Firebase/backend required. Set to
+            // false once you've added a real google-services.json to go live.
+            buildConfigField("boolean", "DEMO_MODE", "true")
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             buildConfigField("boolean", "USE_MOCK_AI_FALLBACK", "false")
+            buildConfigField("boolean", "DEMO_MODE", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
