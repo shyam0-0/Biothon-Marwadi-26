@@ -45,6 +45,32 @@ object FirestoreSchema {
         const val ROOM_URL = "roomUrl"
         const val CASE_ID = "caseId"
         const val CREATED_AT = "createdAt"
+        const val SPECIALTY = "specialty"
+        const val DOCTOR_NOTES = "doctorNotes"
+        const val DIAGNOSIS = "diagnosis"
+        const val PRESCRIPTION_ID = "prescriptionId"
+    }
+
+    object Doctors {
+        const val COLLECTION = "doctors"
+        const val NAME = "name"
+        const val SPECIALTY = "specialty"
+        const val YEARS_EXPERIENCE = "yearsExperience"
+        const val RATING = "rating"
+        const val QUALIFICATION = "qualification"
+    }
+
+    object Prescriptions {
+        const val COLLECTION = "prescriptions"
+        const val APPOINTMENT_ID = "appointmentId"
+        const val PATIENT_ID = "patientId"
+        const val DOCTOR_ID = "doctorId"
+        const val DOCTOR_NAME = "doctorName"
+        const val DIAGNOSIS = "diagnosis"
+        const val MEDICATIONS = "medications"
+        const val ADVICE = "advice"
+        const val FOLLOW_UP_DATE = "followUpDate"
+        const val CREATED_AT = "createdAt"
     }
 
     object DoctorAvailability {
@@ -60,6 +86,15 @@ object FirestoreSchema {
         const val MEDICATIONS = "medications"     // list of maps: name/dosage/timing
         const val ACTIVITY_GOALS = "activityGoals" // list of strings
         const val NOTE = "note"
+        const val DIAGNOSIS = "diagnosis"
+        const val DOCTOR_NAME = "doctorName"
+        const val RECOVERY_GOALS = "recoveryGoals"
+        const val LIFESTYLE = "lifestyle"
+        const val HYDRATION = "hydration"
+        const val EXERCISE = "exercise"
+        const val SLEEP = "sleep"
+        const val FOLLOW_UP_DATE = "followUpDate"
+        const val SOURCE = "source"
 
         // Subcollection of a care plan document.
         const val DAILY_LOGS = "daily_logs"
@@ -67,6 +102,11 @@ object FirestoreSchema {
         const val LOG_SLEEP_HOURS = "sleepHours"
         const val LOG_ACTIVITY_LEVEL = "activityLevel"
         const val LOG_MOOD = "mood"
+        const val LOG_PAIN_LEVEL = "painLevel"
+        const val LOG_CURRENT_SYMPTOMS = "currentSymptoms"
+        const val LOG_MEDICATION_TAKEN = "medicationTaken"
+        const val LOG_TEMPERATURE = "temperature"
+        const val LOG_NOTES = "notes"
         const val LOG_CREATED_AT = "createdAt"
     }
 

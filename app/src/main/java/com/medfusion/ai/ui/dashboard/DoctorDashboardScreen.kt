@@ -38,7 +38,7 @@ import com.medfusion.ai.viewmodel.SessionViewModel
 @Composable
 fun DoctorDashboardScreen(
     onLoggedOut: () -> Unit,
-    onJoinCall: (appointmentId: String) -> Unit,
+    onOpenConsultation: (appointmentId: String) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     sessionViewModel: SessionViewModel = hiltViewModel(),
@@ -108,7 +108,7 @@ fun DoctorDashboardScreen(
                         onAccept = { viewModel.accept(appointment.id) },
                         onReschedule = { reschedulingId = appointment.id },
                         onDecline = { viewModel.decline(appointment.id) },
-                        onJoinCall = { onJoinCall(appointment.id) },
+                        onOpenConsultation = { onOpenConsultation(appointment.id) },
                     )
                 }
             }

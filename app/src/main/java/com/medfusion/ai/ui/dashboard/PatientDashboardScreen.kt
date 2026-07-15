@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.MedicalServices
@@ -28,6 +29,7 @@ import com.medfusion.ai.ui.components.ActionCard
 import com.medfusion.ai.ui.components.MedFusionScaffold
 import com.medfusion.ai.ui.theme.Sizes
 import com.medfusion.ai.ui.theme.Spacing
+import com.medfusion.ai.viewmodel.PatientDashboardViewModel
 import com.medfusion.ai.viewmodel.SessionViewModel
 
 /**
@@ -44,8 +46,10 @@ fun PatientDashboardScreen(
     onLoggedOut: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SessionViewModel = hiltViewModel(),
+    homeViewModel: PatientDashboardViewModel = hiltViewModel(),
 ) {
     val user by viewModel.currentUser.collectAsStateWithLifecycle()
+    val home by homeViewModel.state.collectAsStateWithLifecycle()
     val firstName = user?.fullName?.trim()?.substringBefore(' ')?.takeIf { it.isNotBlank() }
 
     MedFusionScaffold(
@@ -78,6 +82,15 @@ fun PatientDashboardScreen(
             )
             Spacer(Modifier.height(Spacing.sm))
 
+            home.nextAppointment?.let { appt ->
+                ActionCard(
+                    title = "Upcoming appointment",
+                    subtitle = "${appt.doctorName} • ${appt.date} at ${appt.timeSlot} (${appt.status.label})",
+                    icon = Icons.Outlined.EventAvailable,
+                    onClick = onOpenAppointments,
+                )
+            }
+
             ActionCard(
                 title = "Start a symptom check",
                 subtitle = "Describe your symptoms and get a recommended test",
@@ -92,7 +105,11 @@ fun PatientDashboardScreen(
             )
             ActionCard(
                 title = "My care plan",
-                subtitle = "Medication schedule and daily check-ins",
+                subtitle = when {
+                    home.checkInDueToday -> "Daily check-in due today — log how you're feeling"
+                    home.hasCarePlan -> "Today's check-in recorded • medication reminders"
+                    else -> "Medication schedule and daily check-ins"
+                },
                 icon = Icons.Outlined.CalendarMonth,
                 onClick = onOpenCarePlan,
             )

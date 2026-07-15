@@ -7,6 +7,7 @@ import com.medfusion.ai.domain.model.Case
 import com.medfusion.ai.domain.model.CaseStatus
 import com.medfusion.ai.domain.model.ConfidenceLevel
 import com.medfusion.ai.domain.model.FusionResult
+import com.medfusion.ai.domain.model.SymptomAnalysis
 import com.medfusion.ai.domain.model.UrgencyLevel
 import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CaseRepository
@@ -102,5 +103,36 @@ class FakeCaseRepository @Inject constructor(
         )
         cases[caseId] = updated
         return Resource.Success(updated)
+    }
+
+    override suspend fun createCaseFromAnalysis(
+        symptoms: String,
+        analysis: SymptomAnalysis,
+    ): Resource<Case> {
+        val caseId = UUID.randomUUID().toString()
+        val urgency = analysis.severity.toUrgency()
+        val topConfidence = analysis.conditions.maxOfOrNull { it.confidence } ?: 0
+        val case = Case(
+            caseId = caseId,
+            userId = authRepository.currentUserId() ?: DemoData.PATIENT_ID,
+            symptomsText = symptoms.trim(),
+            recommendedTest = analysis.recommendedScans.firstOrNull()
+                ?: analysis.recommendedTests.firstOrNull()
+                ?: "Doctor consultation",
+            urgencyLevel = urgency,
+            status = CaseStatus.ANALYZED,
+            fusionResult = FusionResult(
+                findings = analysis.summary,
+                confidenceScore = topConfidence / 100.0,
+                riskScore = when (urgency) {
+                    UrgencyLevel.RED -> 0.8
+                    UrgencyLevel.YELLOW -> 0.5
+                    UrgencyLevel.GREEN -> 0.2
+                },
+                confidenceLevel = ConfidenceLevel.fromScore(topConfidence / 100.0),
+            ),
+        )
+        cases[caseId] = case
+        return Resource.Success(case)
     }
 }

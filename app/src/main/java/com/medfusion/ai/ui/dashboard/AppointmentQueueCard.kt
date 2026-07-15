@@ -56,11 +56,12 @@ fun AppointmentQueueCard(
     onAccept: () -> Unit,
     onReschedule: () -> Unit,
     onDecline: () -> Unit,
-    onJoinCall: () -> Unit,
+    onOpenConsultation: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val canJoin = appointment.status == AppointmentStatus.ACCEPTED ||
-        appointment.status == AppointmentStatus.RESCHEDULED
+    val canConsult = appointment.status == AppointmentStatus.ACCEPTED ||
+        appointment.status == AppointmentStatus.RESCHEDULED ||
+        appointment.status == AppointmentStatus.COMPLETED
     MedFusionCard(modifier = modifier.clickable(onClick = onToggle), contentPadding = Spacing.md) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             UrgencyDot(level = appointment.urgencyLevel)
@@ -99,16 +100,18 @@ fun AppointmentQueueCard(
                 PreReadSection(caseState)
 
                 Spacer(Modifier.height(Spacing.md))
-                if (canJoin) {
+                if (canConsult) {
                     PrimaryButton(
-                        text = "Join Call",
+                        text = "Open Consultation",
                         leadingIcon = Icons.Outlined.Videocam,
-                        onClick = onJoinCall,
+                        onClick = onOpenConsultation,
                     )
-                    Spacer(Modifier.height(Spacing.sm))
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        SecondaryButton(text = "Reschedule", onClick = onReschedule, modifier = Modifier.weight(1f))
-                        SecondaryButton(text = "Decline", onClick = onDecline, modifier = Modifier.weight(1f))
+                    if (appointment.status != AppointmentStatus.COMPLETED) {
+                        Spacer(Modifier.height(Spacing.sm))
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                            SecondaryButton(text = "Reschedule", onClick = onReschedule, modifier = Modifier.weight(1f))
+                            SecondaryButton(text = "Decline", onClick = onDecline, modifier = Modifier.weight(1f))
+                        }
                     }
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {

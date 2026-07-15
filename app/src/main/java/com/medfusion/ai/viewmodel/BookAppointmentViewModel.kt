@@ -8,6 +8,7 @@ import com.medfusion.ai.core.util.Resource
 import com.medfusion.ai.core.util.UiState
 import com.medfusion.ai.domain.model.Appointment
 import com.medfusion.ai.domain.model.AvailabilitySlot
+import com.medfusion.ai.domain.model.Doctor
 import com.medfusion.ai.domain.model.UrgencyLevel
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import com.medfusion.ai.navigation.Routes
@@ -26,6 +27,9 @@ import java.time.ZoneId
 import javax.inject.Inject
 
 data class BookingUiState(
+    val specialty: String,
+    val doctors: UiState<List<Doctor>> = UiState.Loading,
+    val selectedDoctor: Doctor? = null,
     val date: String? = null,                                   // ISO yyyy-MM-dd
     val availability: UiState<List<AvailabilitySlot>> = UiState.Idle,
     val selectedSlot: AvailabilitySlot? = null,
@@ -40,33 +44,58 @@ class BookAppointmentViewModel @Inject constructor(
     private val appointmentRepository: AppointmentRepository,
 ) : ViewModel() {
 
-    private val caseId: String? = savedStateHandle[Routes.Args.CASE_ID]
+    private val caseId: String? = savedStateHandle.get<String>(Routes.Args.CASE_ID)
+        ?.takeUnless { it == Routes.FOLLOW_UP_CASE }
     private val urgency: UrgencyLevel =
         UrgencyLevel.fromWire(savedStateHandle[Routes.Args.URGENCY])
+    private val specialty: String =
+        savedStateHandle.get<String>(Routes.Args.SPECIALTY)?.ifBlank { null } ?: "General Physician"
 
-    private val _uiState = MutableStateFlow(BookingUiState())
+    private val _uiState = MutableStateFlow(BookingUiState(specialty = specialty))
     val uiState: StateFlow<BookingUiState> = _uiState.asStateFlow()
 
     private val _events = MutableSharedFlow<Appointment>(extraBufferCapacity = 1)
     val bookedEvents: SharedFlow<Appointment> = _events.asSharedFlow()
 
-    fun onDateSelected(epochMillis: Long) {
-        val date = Instant.ofEpochMilli(epochMillis)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate()
-        val iso = date.toString()
-        _uiState.update { it.copy(date = iso, selectedSlot = null, availability = UiState.Loading) }
-        loadAvailability(iso)
+    init {
+        loadDoctors()
     }
 
-    private fun loadAvailability(date: String) {
+    private fun loadDoctors() {
+        _uiState.update { it.copy(doctors = UiState.Loading) }
         viewModelScope.launch {
-            val newState = when (val result = appointmentRepository.getAvailability(date)) {
+            val state = when (val result = appointmentRepository.getDoctorsBySpecialty(specialty)) {
                 is Resource.Success ->
                     if (result.data.isEmpty()) UiState.Empty else UiState.Success(result.data)
                 is Resource.Error -> UiState.Error(result.error)
             }
-            _uiState.update { it.copy(availability = newState) }
+            _uiState.update { it.copy(doctors = state) }
+        }
+    }
+
+    fun selectDoctor(doctor: Doctor) = _uiState.update {
+        it.copy(
+            selectedDoctor = doctor,
+            date = null,
+            availability = UiState.Idle,
+            selectedSlot = null,
+            error = null,
+        )
+    }
+
+    fun changeDoctor() = _uiState.update { it.copy(selectedDoctor = null) }
+
+    fun onDateSelected(epochMillis: Long) {
+        val iso = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+        val doctorId = _uiState.value.selectedDoctor?.id ?: return
+        _uiState.update { it.copy(date = iso, selectedSlot = null, availability = UiState.Loading) }
+        viewModelScope.launch {
+            val state = when (val result = appointmentRepository.getDoctorAvailability(doctorId, iso)) {
+                is Resource.Success ->
+                    if (result.data.isEmpty()) UiState.Empty else UiState.Success(result.data)
+                is Resource.Error -> UiState.Error(result.error)
+            }
+            _uiState.update { it.copy(availability = state) }
         }
     }
 
@@ -77,22 +106,24 @@ class BookAppointmentViewModel @Inject constructor(
 
     fun book() {
         val state = _uiState.value
+        val doctor = state.selectedDoctor
         val slot = state.selectedSlot
         val date = state.date
-        if (date == null || slot == null) {
-            _uiState.update { it.copy(error = AppError.Validation("Please pick a date and a time slot.")) }
+        if (doctor == null || date == null || slot == null) {
+            _uiState.update { it.copy(error = AppError.Validation("Please pick a doctor, date and time slot.")) }
             return
         }
         _uiState.update { it.copy(isBooking = true, error = null) }
         viewModelScope.launch {
             when (val result = appointmentRepository.bookAppointment(
                 caseId = caseId,
-                doctorId = slot.doctorId,
-                doctorName = slot.doctorName,
+                doctorId = doctor.id,
+                doctorName = doctor.name,
                 date = date,
                 timeSlot = slot.timeSlot,
                 message = state.message,
                 urgency = urgency,
+                specialty = specialty,
             )) {
                 is Resource.Success -> {
                     _uiState.update { it.copy(isBooking = false) }
@@ -106,7 +137,6 @@ class BookAppointmentViewModel @Inject constructor(
 
     fun consumeError() = _uiState.update { it.copy(error = null) }
 
-    /** Default date offered by the picker (today, in millis) for convenience. */
     fun todayMillis(): Long =
         LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }

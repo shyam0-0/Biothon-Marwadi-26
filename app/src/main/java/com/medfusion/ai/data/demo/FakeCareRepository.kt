@@ -15,8 +15,16 @@ class FakeCareRepository @Inject constructor() : CareRepository {
 
     private val logs = CopyOnWriteArrayList<DailyLog>()
 
+    // No plan until a doctor approves one or the patient accepts a wellness plan.
+    @Volatile private var storedPlan: CarePlan? = null
+
     override suspend fun getCarePlan(patientId: String): Resource<CarePlan?> =
-        Resource.Success(DemoData.carePlan(patientId))
+        Resource.Success(storedPlan)
+
+    override suspend fun saveCarePlan(plan: CarePlan): Resource<Unit> {
+        storedPlan = plan
+        return Resource.Success(Unit)
+    }
 
     override suspend fun getRecentLogs(patientId: String, limit: Int): Resource<List<DailyLog>> =
         Resource.Success(logs.sortedByDescending { it.date }.take(limit))

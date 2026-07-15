@@ -1,0 +1,71 @@
+package com.medfusion.ai.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.medfusion.ai.core.util.Resource
+import com.medfusion.ai.domain.model.Appointment
+import com.medfusion.ai.domain.model.AppointmentStatus
+import com.medfusion.ai.domain.repository.AppointmentRepository
+import com.medfusion.ai.domain.repository.AuthRepository
+import com.medfusion.ai.domain.repository.CareRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import javax.inject.Inject
+
+/**
+ * Journey snapshot for the patient home (Phase 4): the next upcoming
+ * appointment and whether today's care-plan check-in is still due, so the
+ * dashboard reflects where the patient is in their care journey.
+ */
+data class PatientHomeState(
+    val nextAppointment: Appointment? = null,
+    val hasCarePlan: Boolean = false,
+    val checkInDueToday: Boolean = false,
+)
+
+@HiltViewModel
+class PatientDashboardViewModel @Inject constructor(
+    authRepository: AuthRepository,
+    appointmentRepository: AppointmentRepository,
+    careRepository: CareRepository,
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(PatientHomeState())
+    val state: StateFlow<PatientHomeState> = _state.asStateFlow()
+
+    init {
+        val pid = authRepository.currentUserId()
+        if (pid != null) {
+            val today = LocalDate.now().toString()
+
+            viewModelScope.launch {
+                appointmentRepository.observePatientAppointments(pid).collect { appointments ->
+                    val next = appointments
+                        .filter {
+                            it.date >= today &&
+                                it.status != AppointmentStatus.COMPLETED &&
+                                it.status != AppointmentStatus.DECLINED
+                        }
+                        .minByOrNull { it.date }
+                    _state.update { it.copy(nextAppointment = next) }
+                }
+            }
+
+            // Best-effort care-plan nudge; failures just leave the default card text.
+            viewModelScope.launch {
+                val plan = (careRepository.getCarePlan(pid) as? Resource.Success)?.data
+                    ?: return@launch
+                val latestLog = (careRepository.getRecentLogs(pid, limit = 1) as? Resource.Success)
+                    ?.data?.firstOrNull()
+                _state.update {
+                    it.copy(hasCarePlan = true, checkInDueToday = latestLog?.date != today)
+                }
+            }
+        }
+    }
+}

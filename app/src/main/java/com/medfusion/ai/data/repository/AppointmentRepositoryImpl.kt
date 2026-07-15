@@ -11,6 +11,7 @@ import com.medfusion.ai.core.util.resourceOf
 import com.medfusion.ai.core.util.toAppError
 import com.medfusion.ai.data.firebase.FirestoreSchema.Appointments
 import com.medfusion.ai.data.firebase.FirestoreSchema.DoctorAvailability
+import com.medfusion.ai.data.firebase.FirestoreSchema.Doctors
 import com.medfusion.ai.data.firebase.FirestoreSchema.Users
 import com.medfusion.ai.data.remote.MedFusionApi
 import com.medfusion.ai.data.remote.dto.CreateRoomRequest
@@ -18,6 +19,7 @@ import com.medfusion.ai.di.IoDispatcher
 import com.medfusion.ai.domain.model.Appointment
 import com.medfusion.ai.domain.model.AppointmentStatus
 import com.medfusion.ai.domain.model.AvailabilitySlot
+import com.medfusion.ai.domain.model.Doctor
 import com.medfusion.ai.domain.model.UrgencyLevel
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -65,6 +67,62 @@ class AppointmentRepositoryImpl @Inject constructor(
             }
         }
 
+    override suspend fun getDoctorsBySpecialty(specialty: String): Resource<List<Doctor>> =
+        withContext(io) {
+            resourceOf {
+                val snapshot = firestore.collection(Doctors.COLLECTION)
+                    .whereEqualTo(Doctors.SPECIALTY, specialty)
+                    .get()
+                    .await()
+                val doctors = snapshot.documents.mapNotNull { doc ->
+                    val name = doc.getString(Doctors.NAME) ?: return@mapNotNull null
+                    Doctor(
+                        id = doc.id,
+                        name = name,
+                        specialty = doc.getString(Doctors.SPECIALTY) ?: specialty,
+                        yearsExperience = (doc.getLong(Doctors.YEARS_EXPERIENCE) ?: 0).toInt(),
+                        rating = doc.getDouble(Doctors.RATING) ?: 0.0,
+                        qualification = doc.getString(Doctors.QUALIFICATION).orEmpty(),
+                    )
+                }
+                if (doctors.isEmpty() && BuildConfig.USE_MOCK_AI_FALLBACK) {
+                    demoDoctors(specialty)
+                } else {
+                    doctors
+                }
+            }
+        }
+
+    override suspend fun getDoctorAvailability(doctorId: String, date: String): Resource<List<AvailabilitySlot>> =
+        withContext(io) {
+            resourceOf {
+                val snapshot = firestore.collection(DoctorAvailability.COLLECTION)
+                    .whereEqualTo(DoctorAvailability.DOCTOR_ID, doctorId)
+                    .whereEqualTo(DoctorAvailability.DATE, date)
+                    .get()
+                    .await()
+                val slots = snapshot.documents.flatMap { doc ->
+                    val doctorName = doc.getString(Appointments.DOCTOR_NAME) ?: "Doctor"
+                    @Suppress("UNCHECKED_CAST")
+                    val times = doc.get(DoctorAvailability.SLOTS) as? List<String> ?: emptyList()
+                    times.map { AvailabilitySlot(doctorId, doctorName, date, it) }
+                }
+                if (slots.isEmpty() && BuildConfig.USE_MOCK_AI_FALLBACK) {
+                    DEFAULT_SLOTS.map { AvailabilitySlot(doctorId, "Doctor", date, it) }
+                } else {
+                    slots
+                }
+            }
+        }
+
+    override suspend fun getAppointment(appointmentId: String): Resource<Appointment> =
+        withContext(io) {
+            resourceOf {
+                val snap = appointments().document(appointmentId).get().await()
+                snap.toAppointment() ?: fail(AppError.NotFound("Appointment not found."))
+            }
+        }
+
     override suspend fun bookAppointment(
         caseId: String?,
         doctorId: String,
@@ -73,6 +131,7 @@ class AppointmentRepositoryImpl @Inject constructor(
         timeSlot: String,
         message: String,
         urgency: UrgencyLevel,
+        specialty: String?,
     ): Resource<Appointment> = withContext(io) {
         resourceOf {
             val patientId = auth.currentUser?.uid ?: fail(AppError.Unauthorized())
@@ -91,6 +150,7 @@ class AppointmentRepositoryImpl @Inject constructor(
                 Appointments.URGENCY_LEVEL to urgency.wireValue,
                 Appointments.STATUS to AppointmentStatus.PENDING.wireValue,
                 Appointments.CASE_ID to caseId,
+                Appointments.SPECIALTY to specialty,
                 Appointments.CREATED_AT to FieldValue.serverTimestamp(),
             )
             docRef.set(data).await()
@@ -107,6 +167,7 @@ class AppointmentRepositoryImpl @Inject constructor(
                 urgencyLevel = urgency,
                 status = AppointmentStatus.PENDING,
                 caseId = caseId,
+                specialty = specialty,
             )
         }
     }
@@ -190,14 +251,20 @@ class AppointmentRepositoryImpl @Inject constructor(
     private fun defaultDemoSlots(date: String): List<AvailabilitySlot> {
         val demoDoctorId = "demo-doctor"
         val demoDoctorName = "Dr. A. Sharma"
-        return listOf("09:00 AM", "10:30 AM", "12:00 PM", "03:00 PM", "04:30 PM")
-            .map { AvailabilitySlot(demoDoctorId, demoDoctorName, date, it) }
+        return DEFAULT_SLOTS.map { AvailabilitySlot(demoDoctorId, demoDoctorName, date, it) }
     }
+
+    /** Fallback doctors for a specialty when none are configured (demo builds). */
+    private fun demoDoctors(specialty: String): List<Doctor> = listOf(
+        Doctor("demo-doctor", "Dr. A. Sharma", specialty, 12, 4.8, "MBBS, MD"),
+        Doctor("demo-doctor-2", "Dr. R. Menon", specialty, 8, 4.6, "MBBS, DNB"),
+    )
 
     private companion object {
         // Replace with your Daily.co subdomain in production; only used as a
         // deterministic demo room when the backend /create-room is unavailable.
         const val DEMO_ROOM_BASE = "https://medfusion.daily.co"
+        val DEFAULT_SLOTS = listOf("09:00 AM", "10:30 AM", "12:00 PM", "03:00 PM", "04:30 PM")
     }
 }
 

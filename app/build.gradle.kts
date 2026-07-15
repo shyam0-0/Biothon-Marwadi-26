@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,15 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.services)
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        load(file.inputStream())
+    }
+}
+
+val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY", "")
 
 android {
     namespace = "com.medfusion.ai"
@@ -21,9 +32,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
+        // Gemini API Key
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+
         // Base URL of the FastAPI backend. Override per build type / local.properties.
         buildConfigField("String", "API_BASE_URL", "\"https://api.medfusion.ai/\"")
         buildConfigField("boolean", "USE_MOCK_AI_FALLBACK", "false")
+
         // DEMO_MODE swaps all repositories for in-memory fakes (no Firebase/backend
         // needed) so the full app can be run and demoed with zero setup.
         buildConfigField("boolean", "DEMO_MODE", "false")
@@ -32,21 +47,26 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
+
             // Point to a locally-running FastAPI instance during development.
             // 10.0.2.2 is the host machine's loopback as seen from the emulator.
             buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
+
             // Fall back to on-device mock AI when the backend is unreachable, so
             // the full UI journey is demoable before FastAPI is running.
             buildConfigField("boolean", "USE_MOCK_AI_FALLBACK", "true")
+
             // Run with in-memory fakes — no Firebase/backend required. Set to
             // false once you've added a real google-services.json to go live.
             buildConfigField("boolean", "DEMO_MODE", "true")
         }
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             buildConfigField("boolean", "USE_MOCK_AI_FALLBACK", "false")
             buildConfigField("boolean", "DEMO_MODE", "false")
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -58,13 +78,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions {
         jvmTarget = "17"
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

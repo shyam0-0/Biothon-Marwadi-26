@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.medfusion.ai.domain.model.ConfidenceLevel
+import com.medfusion.ai.domain.model.Severity
 import com.medfusion.ai.domain.model.UrgencyLevel
 import com.medfusion.ai.ui.theme.Spacing
 import com.medfusion.ai.ui.theme.semantic
@@ -78,6 +79,23 @@ fun UrgencyDot(level: UrgencyLevel, modifier: Modifier = Modifier) {
             .size(12.dp)
             .clip(CircleShape)
             .background(c.content)
+    )
+}
+
+/** Severity chip (Low/Moderate/High/Emergency) for the AI symptom analysis. */
+@Composable
+fun SeverityChip(severity: Severity, modifier: Modifier = Modifier) {
+    val s = MaterialTheme.semantic
+    val c = when (severity) {
+        Severity.EMERGENCY, Severity.HIGH -> ChipColors(s.riskRed, s.riskRedContainer)
+        Severity.MODERATE -> ChipColors(s.riskYellow, s.riskYellowContainer)
+        Severity.LOW -> ChipColors(s.riskGreen, s.riskGreenContainer)
+    }
+    MedFusionChip(
+        text = "${severity.label} severity",
+        content = c.content,
+        container = c.container,
+        modifier = modifier,
     )
 }
 

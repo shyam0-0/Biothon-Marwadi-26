@@ -11,6 +11,9 @@ interface CareRepository {
     /** The patient's doctor-set care plan (or a demo default in debug when unset). */
     suspend fun getCarePlan(patientId: String): Resource<CarePlan?>
 
+    /** Persists a care plan (generated on doctor approval, Phase 2). */
+    suspend fun saveCarePlan(plan: CarePlan): Resource<Unit>
+
     /** Recent daily logs, newest first, up to [limit]. */
     suspend fun getRecentLogs(patientId: String, limit: Int = 7): Resource<List<DailyLog>>
 

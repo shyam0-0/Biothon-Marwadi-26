@@ -4,6 +4,7 @@ import com.medfusion.ai.core.util.Resource
 import com.medfusion.ai.domain.model.Appointment
 import com.medfusion.ai.domain.model.AppointmentStatus
 import com.medfusion.ai.domain.model.AvailabilitySlot
+import com.medfusion.ai.domain.model.Doctor
 import com.medfusion.ai.domain.model.UrgencyLevel
 import kotlinx.coroutines.flow.Flow
 
@@ -12,6 +13,12 @@ interface AppointmentRepository {
 
     /** Available slots across doctors for a given ISO date. */
     suspend fun getAvailability(date: String): Resource<List<AvailabilitySlot>>
+
+    /** Doctors matching a recommended specialty (Phase 2 booking flow). */
+    suspend fun getDoctorsBySpecialty(specialty: String): Resource<List<Doctor>>
+
+    /** Available slots for one specific doctor on an ISO date. */
+    suspend fun getDoctorAvailability(doctorId: String, date: String): Resource<List<AvailabilitySlot>>
 
     /** Books an appointment for the signed-in patient; status starts PENDING. */
     suspend fun bookAppointment(
@@ -22,7 +29,11 @@ interface AppointmentRepository {
         timeSlot: String,
         message: String,
         urgency: UrgencyLevel,
+        specialty: String? = null,
     ): Resource<Appointment>
+
+    /** Loads a single appointment by id. */
+    suspend fun getAppointment(appointmentId: String): Resource<Appointment>
 
     /**
      * Live queue of a doctor's appointments, sorted by urgency (red > yellow >

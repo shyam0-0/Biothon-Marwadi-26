@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.MaterialTheme
@@ -27,15 +29,16 @@ import com.medfusion.ai.ui.components.EmptyView
 import com.medfusion.ai.ui.components.MedFusionCard
 import com.medfusion.ai.ui.components.MedFusionScaffold
 import com.medfusion.ai.ui.components.PrimaryButton
+import com.medfusion.ai.ui.components.SecondaryButton
 import com.medfusion.ai.ui.components.UrgencyChip
 import com.medfusion.ai.ui.theme.Sizes
 import com.medfusion.ai.ui.theme.Spacing
 import com.medfusion.ai.viewmodel.PatientAppointmentsViewModel
 
-/** A patient's list of appointments with a Join Call action for accepted ones. */
+/** A patient's appointments — join a call (accepted) or view the prescription (completed). */
 @Composable
 fun PatientAppointmentsScreen(
-    onJoinCall: (appointmentId: String) -> Unit,
+    onViewPrescription: (appointmentId: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PatientAppointmentsViewModel = hiltViewModel(),
@@ -48,18 +51,19 @@ fun PatientAppointmentsScreen(
                 title = "No appointments yet",
                 subtitle = "Book an appointment after your analysis to see it here.",
                 icon = Icons.Outlined.EventBusy,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().padding(padding),
             )
         } else {
             LazyColumn(
-                modifier = modifier.fillMaxSize(),
+                modifier = modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(Sizes.screenPadding),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 items(appointments, key = { it.id }) { appointment ->
                     PatientAppointmentCard(
                         appointment = appointment,
-                        onJoinCall = { onJoinCall(appointment.id) },
+                        onJoinCall = { viewModel.joinCall(appointment.id) },
+                        onViewPrescription = { onViewPrescription(appointment.id) },
                     )
                 }
                 item { Spacer(Modifier.height(Spacing.md)) }
@@ -69,9 +73,14 @@ fun PatientAppointmentsScreen(
 }
 
 @Composable
-private fun PatientAppointmentCard(appointment: Appointment, onJoinCall: () -> Unit) {
+private fun PatientAppointmentCard(
+    appointment: Appointment,
+    onJoinCall: () -> Unit,
+    onViewPrescription: () -> Unit,
+) {
     val canJoin = appointment.status == AppointmentStatus.ACCEPTED ||
         appointment.status == AppointmentStatus.RESCHEDULED
+    val completed = appointment.status == AppointmentStatus.COMPLETED
 
     MedFusionCard(contentPadding = Spacing.md) {
         Row(
@@ -103,6 +112,14 @@ private fun PatientAppointmentCard(appointment: Appointment, onJoinCall: () -> U
                 text = "Join Call",
                 leadingIcon = Icons.Outlined.Videocam,
                 onClick = onJoinCall,
+            )
+        }
+        if (completed) {
+            Spacer(Modifier.height(Spacing.md))
+            SecondaryButton(
+                text = "View Prescription",
+                leadingIcon = Icons.Outlined.Description,
+                onClick = onViewPrescription,
             )
         }
     }

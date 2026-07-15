@@ -30,6 +30,8 @@ object NetworkModule {
             } else {
                 HttpLoggingInterceptor.Level.NONE
             }
+            // Never print the Gemini API key, even in debug logs.
+            redactHeader("x-goog-api-key")
         }
         return OkHttpClient.Builder()
             .addInterceptor(logging)

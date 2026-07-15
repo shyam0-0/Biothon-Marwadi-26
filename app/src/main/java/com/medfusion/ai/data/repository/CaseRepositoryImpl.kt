@@ -22,6 +22,7 @@ import com.medfusion.ai.domain.model.Case
 import com.medfusion.ai.domain.model.CaseStatus
 import com.medfusion.ai.domain.model.ConfidenceLevel
 import com.medfusion.ai.domain.model.FusionResult
+import com.medfusion.ai.domain.model.SymptomAnalysis
 import com.medfusion.ai.domain.model.UrgencyLevel
 import com.medfusion.ai.domain.repository.CaseRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -144,6 +145,55 @@ class CaseRepositoryImpl @Inject constructor(
                 case.copy(fusionResult = fusion, status = CaseStatus.ANALYZED)
             }
         }
+
+    override suspend fun createCaseFromAnalysis(
+        symptoms: String,
+        analysis: SymptomAnalysis,
+    ): Resource<Case> = withContext(io) {
+        resourceOf {
+            val userId = auth.currentUser?.uid ?: fail(AppError.Unauthorized())
+            val docRef = casesCollection().document()
+            val caseId = docRef.id
+            val urgency = analysis.severity.toUrgency()
+            val recommendedTest = analysis.recommendedScans.firstOrNull()
+                ?: analysis.recommendedTests.firstOrNull()
+                ?: "Doctor consultation"
+            val topConfidence = analysis.conditions.maxOfOrNull { it.confidence } ?: 0
+            val score = topConfidence / 100.0
+            val fusion = FusionResult(
+                findings = analysis.summary,
+                confidenceScore = score,
+                riskScore = when (urgency) {
+                    UrgencyLevel.RED -> 0.8
+                    UrgencyLevel.YELLOW -> 0.5
+                    UrgencyLevel.GREEN -> 0.2
+                },
+                confidenceLevel = ConfidenceLevel.fromScore(score),
+            )
+            val data = mapOf(
+                Cases.CASE_ID to caseId,
+                Cases.USER_ID to userId,
+                Cases.SYMPTOMS_TEXT to symptoms.trim(),
+                Cases.RECOMMENDED_TEST to recommendedTest,
+                Cases.URGENCY_LEVEL to urgency.wireValue,
+                Cases.STATUS to CaseStatus.ANALYZED.wireValue,
+                Cases.FUSION_RESULT to fusion.toMap(),
+                Cases.CREATED_AT to FieldValue.serverTimestamp(),
+                Cases.UPDATED_AT to FieldValue.serverTimestamp(),
+            )
+            docRef.set(data).await()
+
+            Case(
+                caseId = caseId,
+                userId = userId,
+                symptomsText = symptoms.trim(),
+                recommendedTest = recommendedTest,
+                urgencyLevel = urgency,
+                status = CaseStatus.ANALYZED,
+                fusionResult = fusion,
+            )
+        }
+    }
 
     /**
      * Calls the /triage endpoint; on a connectivity-class failure in a build with

@@ -24,6 +24,10 @@ fun DocumentSnapshot.toAppointment(): Appointment? {
         caseId = getString(Appointments.CASE_ID),
         roomUrl = getString(Appointments.ROOM_URL),
         createdAtMillis = (get(Appointments.CREATED_AT) as? Timestamp)?.toDate()?.time ?: 0L,
+        specialty = getString(Appointments.SPECIALTY),
+        doctorNotes = getString(Appointments.DOCTOR_NOTES),
+        diagnosis = getString(Appointments.DIAGNOSIS),
+        prescriptionId = getString(Appointments.PRESCRIPTION_ID),
     )
 }
 

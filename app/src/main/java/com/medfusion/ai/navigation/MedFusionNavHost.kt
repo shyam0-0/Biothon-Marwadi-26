@@ -17,12 +17,14 @@ import com.medfusion.ai.ui.analysis.AnalysisScreen
 import com.medfusion.ai.ui.appointment.BookAppointmentScreen
 import com.medfusion.ai.ui.appointment.PatientAppointmentsScreen
 import com.medfusion.ai.ui.care.CarePlanScreen
+import com.medfusion.ai.ui.consultation.DoctorConsultationScreen
+import com.medfusion.ai.ui.consultation.PrescriptionScreen
 import com.medfusion.ai.ui.landing.RoleSelectionScreen
 import com.medfusion.ai.ui.result.ResultScreen
 import com.medfusion.ai.ui.settings.SettingsScreen
+import com.medfusion.ai.ui.symptom.SymptomAnalysisScreen
 import com.medfusion.ai.ui.video.VideoCallScreen
 import com.medfusion.ai.ui.vitals.VitalsMonitorScreen
-import com.medfusion.ai.ui.triage.SymptomTriageScreen
 import com.medfusion.ai.ui.upload.UploadResultsScreen
 
 /**
@@ -113,7 +115,9 @@ fun MedFusionNavHost(
         composable(Routes.DOCTOR_DASHBOARD) {
             DoctorDashboardScreen(
                 onLoggedOut = { navController.returnToRoleSelection() },
-                onJoinCall = { appointmentId -> navController.navigate(Routes.videoCall(appointmentId)) },
+                onOpenConsultation = { appointmentId ->
+                    navController.navigate(Routes.doctorConsultation(appointmentId))
+                },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
             )
         }
@@ -124,8 +128,30 @@ fun MedFusionNavHost(
 
         composable(Routes.PATIENT_APPOINTMENTS) {
             PatientAppointmentsScreen(
-                onJoinCall = { appointmentId -> navController.navigate(Routes.videoCall(appointmentId)) },
+                onViewPrescription = { appointmentId ->
+                    navController.navigate(Routes.prescription(appointmentId))
+                },
                 onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = Routes.DOCTOR_CONSULTATION,
+            arguments = listOf(navArgument(Routes.Args.APPOINTMENT_ID) { type = NavType.StringType }),
+        ) {
+            DoctorConsultationScreen(
+                onCompleted = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = Routes.PRESCRIPTION,
+            arguments = listOf(navArgument(Routes.Args.APPOINTMENT_ID) { type = NavType.StringType }),
+        ) {
+            PrescriptionScreen(
+                onBack = { navController.popBackStack() },
+                onOpenCarePlan = { navController.navigate(Routes.CARE_PLAN) },
             )
         }
 
@@ -138,8 +164,11 @@ fun MedFusionNavHost(
 
         // --- Patient journey ---------------------------------------------------
         composable(Routes.SYMPTOM_TRIAGE) {
-            SymptomTriageScreen(
-                onUploadNow = { caseId -> navController.navigate(Routes.uploadResults(caseId)) },
+            // AI consultation first; appointments open only when the patient chooses.
+            SymptomAnalysisScreen(
+                onConsult = { caseId, urgency, specialty ->
+                    navController.navigate(Routes.bookAppointment(caseId, urgency, specialty))
+                },
                 onBack = { navController.popBackStack() },
             )
         }
@@ -193,6 +222,10 @@ fun MedFusionNavHost(
                     type = NavType.StringType
                     defaultValue = "yellow"
                 },
+                navArgument(Routes.Args.SPECIALTY) {
+                    type = NavType.StringType
+                    defaultValue = "General Physician"
+                },
             ),
         ) {
             BookAppointmentScreen(
@@ -209,7 +242,10 @@ fun MedFusionNavHost(
 
         // --- Placeholders built in later phases (10, 11) -----------------------
         composable(Routes.CARE_PLAN) {
-            CarePlanScreen(onBack = { navController.popBackStack() })
+            CarePlanScreen(
+                onBack = { navController.popBackStack() },
+                onBookFollowUp = { navController.navigate(Routes.bookFollowUp()) },
+            )
         }
         composable(Routes.VITALS_MONITOR) {
             VitalsMonitorScreen(onBack = { navController.popBackStack() })

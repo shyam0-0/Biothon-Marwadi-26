@@ -1,14 +1,45 @@
 package com.medfusion.ai.domain.model
 
 /**
- * A doctor-set care plan (Phase 10): medication schedule + activity goals, stored
- * in the "care_plans" collection keyed by patientId.
+ * A dynamic care plan (Phase 3), created only after doctor approval or when a
+ * patient accepts an AI wellness plan. Stored in "care_plans" keyed by patientId.
+ * [source] records how it came to exist.
  */
 data class CarePlan(
     val patientId: String,
     val medications: List<Medication>,
     val activityGoals: List<String>,
     val note: String? = null,
+    val diagnosis: String? = null,
+    val doctorName: String? = null,
+    val recoveryGoals: List<String> = emptyList(),
+    val lifestyle: List<String> = emptyList(),
+    val hydration: String? = null,
+    val exercise: String? = null,
+    val sleep: String? = null,
+    val followUpDate: String? = null,
+    val source: CarePlanSource = CarePlanSource.DOCTOR,
+) {
+    /** Medicine reminders derived from each medication's timing. */
+    val medicineReminders: List<String>
+        get() = medications.map { "${it.name} — ${it.dosage} • ${it.timing}" }
+}
+
+enum class CarePlanSource(val wireValue: String) {
+    DOCTOR("doctor"),
+    AI_WELLNESS("ai_wellness");
+
+    companion object {
+        fun fromWire(value: String?): CarePlanSource =
+            entries.firstOrNull { it.wireValue.equals(value?.trim(), ignoreCase = true) } ?: DOCTOR
+    }
+}
+
+/** Gemini's assessment of recovery from historical check-ins (Phase 3). */
+data class ProgressAnalysis(
+    val status: String,          // e.g. "Recovery improving"
+    val summary: String,
+    val followUpRecommended: Boolean,
 )
 
 data class Medication(
@@ -23,6 +54,11 @@ data class DailyLog(
     val sleepHours: Double,
     val activityLevel: ActivityLevel,
     val mood: Mood,
+    val painLevel: Int = 0,          // 0–10
+    val currentSymptoms: String = "",
+    val medicationTaken: Boolean = false,
+    val temperature: Double? = null, // °F
+    val notes: String = "",
 )
 
 enum class ActivityLevel(val wireValue: String, val label: String) {

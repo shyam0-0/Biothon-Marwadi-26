@@ -1,10 +1,12 @@
 package com.medfusion.ai.data.demo
 
+import com.medfusion.ai.core.util.AppError
 import com.medfusion.ai.core.util.Resource
 import com.medfusion.ai.data.repository.sortedForQueue
 import com.medfusion.ai.domain.model.Appointment
 import com.medfusion.ai.domain.model.AppointmentStatus
 import com.medfusion.ai.domain.model.AvailabilitySlot
+import com.medfusion.ai.domain.model.Doctor
 import com.medfusion.ai.domain.model.UrgencyLevel
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +29,25 @@ class FakeAppointmentRepository @Inject constructor() : AppointmentRepository {
             }
         )
 
+    override suspend fun getDoctorsBySpecialty(specialty: String): Resource<List<Doctor>> =
+        Resource.Success(
+            listOf(
+                Doctor(DemoData.DOCTOR_ID, DemoData.DOCTOR_NAME, specialty, 12, 4.8, "MBBS, MD"),
+                Doctor("demo-doctor-2", "Dr. R. Menon", specialty, 8, 4.6, "MBBS, DNB"),
+            )
+        )
+
+    override suspend fun getDoctorAvailability(doctorId: String, date: String): Resource<List<AvailabilitySlot>> =
+        Resource.Success(
+            DemoData.defaultSlots.map { AvailabilitySlot(doctorId, DemoData.DOCTOR_NAME, date, it) }
+        )
+
+    override suspend fun getAppointment(appointmentId: String): Resource<Appointment> {
+        val appointment = appointments.value.firstOrNull { it.id == appointmentId }
+            ?: return Resource.Error(AppError.NotFound("Appointment not found."))
+        return Resource.Success(appointment)
+    }
+
     override suspend fun bookAppointment(
         caseId: String?,
         doctorId: String,
@@ -35,6 +56,7 @@ class FakeAppointmentRepository @Inject constructor() : AppointmentRepository {
         timeSlot: String,
         message: String,
         urgency: UrgencyLevel,
+        specialty: String?,
     ): Resource<Appointment> {
         val appointment = Appointment(
             id = UUID.randomUUID().toString(),
@@ -49,9 +71,17 @@ class FakeAppointmentRepository @Inject constructor() : AppointmentRepository {
             status = AppointmentStatus.PENDING,
             caseId = caseId,
             createdAtMillis = System.currentTimeMillis(),
+            specialty = specialty,
         )
         appointments.value = appointments.value + appointment
         return Resource.Success(appointment)
+    }
+
+    /** Exposes internal mutation so the demo consultation repo can update appointments. */
+    fun updateAppointment(appointmentId: String, transform: (Appointment) -> Appointment) {
+        appointments.value = appointments.value.map {
+            if (it.id == appointmentId) transform(it) else it
+        }
     }
 
     override fun observeDoctorQueue(doctorId: String): Flow<List<Appointment>> =

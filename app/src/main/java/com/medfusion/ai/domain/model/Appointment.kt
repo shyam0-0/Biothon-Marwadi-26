@@ -18,6 +18,11 @@ data class Appointment(
     val caseId: String? = null,
     val roomUrl: String? = null,
     val createdAtMillis: Long = 0L,
+    // Phase 2 — consultation outcome fields.
+    val specialty: String? = null,
+    val doctorNotes: String? = null,
+    val diagnosis: String? = null,
+    val prescriptionId: String? = null,
 )
 
 enum class AppointmentStatus(val wireValue: String, val label: String) {

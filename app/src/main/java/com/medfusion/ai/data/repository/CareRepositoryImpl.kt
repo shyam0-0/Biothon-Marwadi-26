@@ -3,7 +3,6 @@ package com.medfusion.ai.data.repository
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.medfusion.ai.BuildConfig
 import com.medfusion.ai.core.util.Resource
 import com.medfusion.ai.core.util.resourceOf
 import com.medfusion.ai.data.firebase.FirestoreSchema.CarePlans
@@ -11,6 +10,7 @@ import com.medfusion.ai.data.firebase.FirestoreSchema.PendingApprovals
 import com.medfusion.ai.di.IoDispatcher
 import com.medfusion.ai.domain.model.ActivityLevel
 import com.medfusion.ai.domain.model.CarePlan
+import com.medfusion.ai.domain.model.CarePlanSource
 import com.medfusion.ai.domain.model.CareSuggestion
 import com.medfusion.ai.domain.model.DailyLog
 import com.medfusion.ai.domain.model.Medication
@@ -34,11 +34,13 @@ class CareRepositoryImpl @Inject constructor(
     private fun logsCollection(patientId: String) =
         planDoc(patientId).collection(CarePlans.DAILY_LOGS)
 
+    // A care plan exists only after doctor approval or an accepted AI wellness
+    // plan (Phase 3) — so a missing document returns null, not a default.
     override suspend fun getCarePlan(patientId: String): Resource<CarePlan?> = withContext(io) {
         resourceOf {
             val snap = planDoc(patientId).get().await()
             if (!snap.exists()) {
-                if (BuildConfig.USE_MOCK_AI_FALLBACK) demoCarePlan(patientId) else null
+                null
             } else {
                 @Suppress("UNCHECKED_CAST")
                 val meds = (snap.get(CarePlans.MEDICATIONS) as? List<Map<String, Any?>>).orEmpty()
@@ -51,13 +53,51 @@ class CareRepositoryImpl @Inject constructor(
                     }
                 @Suppress("UNCHECKED_CAST")
                 val goals = (snap.get(CarePlans.ACTIVITY_GOALS) as? List<String>).orEmpty()
+                @Suppress("UNCHECKED_CAST")
+                val recovery = (snap.get(CarePlans.RECOVERY_GOALS) as? List<String>).orEmpty()
+                @Suppress("UNCHECKED_CAST")
+                val lifestyle = (snap.get(CarePlans.LIFESTYLE) as? List<String>).orEmpty()
                 CarePlan(
                     patientId = patientId,
                     medications = meds,
                     activityGoals = goals,
                     note = snap.getString(CarePlans.NOTE),
+                    diagnosis = snap.getString(CarePlans.DIAGNOSIS),
+                    doctorName = snap.getString(CarePlans.DOCTOR_NAME),
+                    recoveryGoals = recovery,
+                    lifestyle = lifestyle,
+                    hydration = snap.getString(CarePlans.HYDRATION),
+                    exercise = snap.getString(CarePlans.EXERCISE),
+                    sleep = snap.getString(CarePlans.SLEEP),
+                    followUpDate = snap.getString(CarePlans.FOLLOW_UP_DATE),
+                    source = CarePlanSource.fromWire(snap.getString(CarePlans.SOURCE)),
                 )
             }
+        }
+    }
+
+    override suspend fun saveCarePlan(plan: CarePlan): Resource<Unit> = withContext(io) {
+        resourceOf {
+            val medications = plan.medications.map {
+                mapOf("name" to it.name, "dosage" to it.dosage, "timing" to it.timing)
+            }
+            val data = mapOf(
+                CarePlans.PATIENT_ID to plan.patientId,
+                CarePlans.MEDICATIONS to medications,
+                CarePlans.ACTIVITY_GOALS to plan.activityGoals,
+                CarePlans.NOTE to plan.note,
+                CarePlans.DIAGNOSIS to plan.diagnosis,
+                CarePlans.DOCTOR_NAME to plan.doctorName,
+                CarePlans.RECOVERY_GOALS to plan.recoveryGoals,
+                CarePlans.LIFESTYLE to plan.lifestyle,
+                CarePlans.HYDRATION to plan.hydration,
+                CarePlans.EXERCISE to plan.exercise,
+                CarePlans.SLEEP to plan.sleep,
+                CarePlans.FOLLOW_UP_DATE to plan.followUpDate,
+                CarePlans.SOURCE to plan.source.wireValue,
+            )
+            planDoc(plan.patientId).set(data).await()
+            Unit
         }
     }
 
@@ -76,6 +116,11 @@ class CareRepositoryImpl @Inject constructor(
                         sleepHours = doc.getDouble(CarePlans.LOG_SLEEP_HOURS) ?: 0.0,
                         activityLevel = ActivityLevel.fromWire(doc.getString(CarePlans.LOG_ACTIVITY_LEVEL)),
                         mood = Mood.fromWire(doc.getString(CarePlans.LOG_MOOD)),
+                        painLevel = (doc.getLong(CarePlans.LOG_PAIN_LEVEL) ?: 0).toInt(),
+                        currentSymptoms = doc.getString(CarePlans.LOG_CURRENT_SYMPTOMS).orEmpty(),
+                        medicationTaken = doc.getBoolean(CarePlans.LOG_MEDICATION_TAKEN) ?: false,
+                        temperature = doc.getDouble(CarePlans.LOG_TEMPERATURE),
+                        notes = doc.getString(CarePlans.LOG_NOTES).orEmpty(),
                     )
                 }
             }
@@ -89,6 +134,11 @@ class CareRepositoryImpl @Inject constructor(
                     CarePlans.LOG_SLEEP_HOURS to log.sleepHours,
                     CarePlans.LOG_ACTIVITY_LEVEL to log.activityLevel.wireValue,
                     CarePlans.LOG_MOOD to log.mood.wireValue,
+                    CarePlans.LOG_PAIN_LEVEL to log.painLevel,
+                    CarePlans.LOG_CURRENT_SYMPTOMS to log.currentSymptoms.trim(),
+                    CarePlans.LOG_MEDICATION_TAKEN to log.medicationTaken,
+                    CarePlans.LOG_TEMPERATURE to log.temperature,
+                    CarePlans.LOG_NOTES to log.notes.trim(),
                     CarePlans.LOG_CREATED_AT to FieldValue.serverTimestamp(),
                 )
                 // Document id = date so re-submitting the same day overwrites it.
@@ -113,14 +163,4 @@ class CareRepositoryImpl @Inject constructor(
             Unit
         }
     }
-
-    private fun demoCarePlan(patientId: String) = CarePlan(
-        patientId = patientId,
-        medications = listOf(
-            Medication("Amoxicillin", "500 mg", "After breakfast"),
-            Medication("Vitamin D", "1 tablet", "With lunch"),
-        ),
-        activityGoals = listOf("30-minute walk", "8 glasses of water", "Sleep by 11 PM"),
-        note = "Follow up in two weeks. Keep hydrated and monitor your temperature.",
-    )
 }

@@ -2,6 +2,7 @@ package com.medfusion.ai.domain.repository
 
 import com.medfusion.ai.core.util.Resource
 import com.medfusion.ai.domain.model.Case
+import com.medfusion.ai.domain.model.SymptomAnalysis
 
 /**
  * Owns the "cases" aggregate across the patient journey. Grows across phases:
@@ -36,4 +37,12 @@ interface CaseRepository {
      * "fusionResult", moves status to ANALYZED, and returns the updated case.
      */
     suspend fun runAnalysis(caseId: String, language: String = ""): Resource<Case>
+
+    /**
+     * Persists a completed AI symptom analysis (Phase 1) as a case so that a
+     * chosen consultation carries the symptoms, urgency and AI summary into the
+     * booking flow and the doctor's pre-read. Called only when the patient
+     * decides to consult — never automatically.
+     */
+    suspend fun createCaseFromAnalysis(symptoms: String, analysis: SymptomAnalysis): Resource<Case>
 }
