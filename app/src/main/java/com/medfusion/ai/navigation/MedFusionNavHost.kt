@@ -19,7 +19,11 @@ import com.medfusion.ai.ui.appointment.PatientAppointmentsScreen
 import com.medfusion.ai.ui.care.CarePlanScreen
 import com.medfusion.ai.ui.consultation.DoctorConsultationScreen
 import com.medfusion.ai.ui.consultation.PrescriptionScreen
+import com.medfusion.ai.ui.doctor.DoctorPatientProfileScreen
+import com.medfusion.ai.ui.doctor.DoctorPatientsScreen
+import com.medfusion.ai.ui.doctor.DoctorScheduleScreen
 import com.medfusion.ai.ui.landing.RoleSelectionScreen
+import com.medfusion.ai.ui.passport.PatientPassportScreen
 import com.medfusion.ai.ui.result.ResultScreen
 import com.medfusion.ai.ui.settings.SettingsScreen
 import com.medfusion.ai.ui.symptom.SymptomAnalysisScreen
@@ -107,8 +111,18 @@ fun MedFusionNavHost(
                 onOpenAppointments = { navController.navigate(Routes.PATIENT_APPOINTMENTS) },
                 onOpenCarePlan = { navController.navigate(Routes.CARE_PLAN) },
                 onOpenVitals = { navController.navigate(Routes.VITALS_MONITOR) },
+                onOpenPassport = { navController.navigate(Routes.PATIENT_PASSPORT) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onLoggedOut = { navController.returnToRoleSelection() },
+            )
+        }
+
+        // Patient Passport — the digital health record (Phase 5).
+        composable(Routes.PATIENT_PASSPORT) {
+            PatientPassportScreen(
+                onBack = { navController.popBackStack() },
+                onOpenCarePlan = { navController.navigate(Routes.CARE_PLAN) },
+                onOpenAppointments = { navController.navigate(Routes.PATIENT_APPOINTMENTS) },
             )
         }
 
@@ -118,8 +132,37 @@ fun MedFusionNavHost(
                 onOpenConsultation = { appointmentId ->
                     navController.navigate(Routes.doctorConsultation(appointmentId))
                 },
+                onOpenPatients = { navController.navigate(Routes.DOCTOR_PATIENTS) },
+                onOpenSchedule = { navController.navigate(Routes.DOCTOR_SCHEDULE) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
             )
+        }
+
+        // --- Doctor portal (Phase 6) -------------------------------------------
+        composable(Routes.DOCTOR_PATIENTS) {
+            DoctorPatientsScreen(
+                onOpenPatient = { patientId, patientName ->
+                    navController.navigate(Routes.doctorPatientProfile(patientId, patientName))
+                },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = Routes.DOCTOR_PATIENT_PROFILE,
+            arguments = listOf(
+                navArgument(Routes.Args.PATIENT_ID) { type = NavType.StringType },
+                navArgument(Routes.Args.PATIENT_NAME) {
+                    type = NavType.StringType
+                    defaultValue = "Patient"
+                },
+            ),
+        ) {
+            DoctorPatientProfileScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.DOCTOR_SCHEDULE) {
+            DoctorScheduleScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.SETTINGS) {

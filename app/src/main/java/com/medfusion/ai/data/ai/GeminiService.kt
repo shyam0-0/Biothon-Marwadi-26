@@ -12,6 +12,7 @@ import com.medfusion.ai.data.ai.dto.GeminiInlineData
 import com.medfusion.ai.data.ai.dto.GeminiPart
 import com.medfusion.ai.data.ai.dto.GeminiRequest
 import com.medfusion.ai.data.ai.dto.GeminiResponse
+import com.medfusion.ai.data.ai.dto.PatientExplanationDto
 import com.medfusion.ai.data.ai.dto.ProgressAnalysisDto
 import com.medfusion.ai.data.ai.dto.SymptomAnalysisDto
 import com.medfusion.ai.data.ai.dto.WellnessPlanDto
@@ -20,9 +21,13 @@ import com.medfusion.ai.di.IoDispatcher
 import com.medfusion.ai.domain.ai.AiService
 import com.medfusion.ai.domain.model.CarePlan
 import com.medfusion.ai.domain.model.DailyLog
+import com.medfusion.ai.domain.model.PatientContext
+import com.medfusion.ai.domain.model.PatientExplanation
+import com.medfusion.ai.domain.model.Prescription
 import com.medfusion.ai.domain.model.ProgressAnalysis
 import com.medfusion.ai.domain.model.ReportAttachment
 import com.medfusion.ai.domain.model.SymptomAnalysis
+import com.medfusion.ai.domain.model.SymptomLocation
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -50,11 +55,13 @@ class GeminiService @Inject constructor(
         symptoms: String,
         language: String,
         attachments: List<ReportAttachment>,
+        patientContext: PatientContext?,
+        locations: List<SymptomLocation>,
     ): Resource<SymptomAnalysis> = withContext(io) {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank()) {
             return@withContext if (allowMock()) {
-                Resource.Success(mockProvider.analyze(symptoms, attachments.isNotEmpty()))
+                Resource.Success(mockProvider.analyze(symptoms, attachments.isNotEmpty(), patientContext, locations))
             } else {
                 Resource.Error(AppError.Validation("AI is not configured. Add your Gemini API key to local.properties."))
             }
@@ -62,7 +69,7 @@ class GeminiService @Inject constructor(
 
         try {
             val request = GeminiRequest(
-                contents = listOf(GeminiContent(role = "user", parts = buildParts(symptoms, language, attachments))),
+                contents = listOf(GeminiContent(role = "user", parts = buildParts(symptoms, language, attachments, patientContext, locations))),
                 generationConfig = GeminiGenerationConfig(),
             )
             val response = geminiApi.generateContent(ENDPOINT, key, request)
@@ -72,7 +79,7 @@ class GeminiService @Inject constructor(
                 ?.content
                 ?.parts
                 ?.firstNotNullOfOrNull { it.text }
-                ?: return@withContext emptyResponse(response, symptoms, attachments)
+                ?: return@withContext emptyResponse(response, symptoms, attachments, patientContext, locations)
 
             val dto = moshi.adapter(SymptomAnalysisDto::class.java).fromJson(sanitize(json))
                 ?: return@withContext Resource.Error(
@@ -89,7 +96,7 @@ class GeminiService @Inject constructor(
             // still surface to the developer.
             val recoverable = error is AppError.Network || error is AppError.Timeout || error is AppError.Server
             if (BuildConfig.DEMO_MODE || (BuildConfig.USE_MOCK_AI_FALLBACK && recoverable)) {
-                Resource.Success(mockProvider.analyze(symptoms, attachments.isNotEmpty()))
+                Resource.Success(mockProvider.analyze(symptoms, attachments.isNotEmpty(), patientContext, locations))
             } else {
                 Resource.Error(error)
             }
@@ -150,6 +157,34 @@ class GeminiService @Inject constructor(
             }
         }
 
+    override suspend fun explainForPatient(
+        prescription: Prescription,
+        carePlan: CarePlan?,
+        language: String,
+    ): Resource<PatientExplanation> = withContext(io) {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank()) {
+            return@withContext if (allowMock()) Resource.Success(mockProvider.patientExplanation(prescription))
+            else Resource.Error(AppError.Validation("AI is not configured."))
+        }
+        try {
+            val response = geminiApi.generateContent(
+                ENDPOINT, key, textRequest(GeminiPrompt.buildExplain(prescription, carePlan, language))
+            )
+            val json = extractText(response)
+                ?: return@withContext if (allowMock()) Resource.Success(mockProvider.patientExplanation(prescription))
+                else Resource.Error(AppError.Server())
+            val dto = moshi.adapter(PatientExplanationDto::class.java).fromJson(sanitize(json))
+                ?: return@withContext Resource.Error(AppError.Server())
+            Resource.Success(dto.toDomain())
+        } catch (c: CancellationException) {
+            throw c
+        } catch (t: Throwable) {
+            if (shouldFallback(t)) Resource.Success(mockProvider.patientExplanation(prescription))
+            else Resource.Error(t.toAppError())
+        }
+    }
+
     private fun textRequest(prompt: String) = GeminiRequest(
         contents = listOf(GeminiContent(role = "user", parts = listOf(GeminiPart(text = prompt)))),
         generationConfig = GeminiGenerationConfig(),
@@ -168,9 +203,11 @@ class GeminiService @Inject constructor(
         symptoms: String,
         language: String,
         attachments: List<ReportAttachment>,
+        patientContext: PatientContext?,
+        locations: List<SymptomLocation>,
     ): List<GeminiPart> {
         val parts = mutableListOf(
-            GeminiPart(text = GeminiPrompt.build(symptoms, language, attachments.isNotEmpty()))
+            GeminiPart(text = GeminiPrompt.build(symptoms, language, attachments.isNotEmpty(), patientContext, locations))
         )
         // Attach up to a few reports as inline base64; skip any we can't read.
         attachments.take(MAX_ATTACHMENTS).forEach { attachment ->
@@ -194,13 +231,15 @@ class GeminiService @Inject constructor(
         response: GeminiResponse,
         symptoms: String,
         attachments: List<ReportAttachment>,
+        patientContext: PatientContext?,
+        locations: List<SymptomLocation>,
     ): Resource<SymptomAnalysis> {
         val blocked = response.promptFeedback?.blockReason
         return when {
             blocked != null -> Resource.Error(
                 AppError.Validation("Your request couldn't be processed (reason: $blocked). Please rephrase your symptoms.")
             )
-            allowMock() -> Resource.Success(mockProvider.analyze(symptoms, attachments.isNotEmpty()))
+            allowMock() -> Resource.Success(mockProvider.analyze(symptoms, attachments.isNotEmpty(), patientContext, locations))
             else -> Resource.Error(AppError.Server("The assistant didn't return a result. Please try again."))
         }
     }

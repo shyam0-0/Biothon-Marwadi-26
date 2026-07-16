@@ -3,6 +3,7 @@ package com.medfusion.ai.domain.repository
 import com.medfusion.ai.core.util.Resource
 import com.medfusion.ai.domain.model.Case
 import com.medfusion.ai.domain.model.SymptomAnalysis
+import com.medfusion.ai.domain.model.SymptomLocation
 
 /**
  * Owns the "cases" aggregate across the patient journey. Grows across phases:
@@ -44,5 +45,9 @@ interface CaseRepository {
      * booking flow and the doctor's pre-read. Called only when the patient
      * decides to consult — never automatically.
      */
-    suspend fun createCaseFromAnalysis(symptoms: String, analysis: SymptomAnalysis): Resource<Case>
+    suspend fun createCaseFromAnalysis(
+        symptoms: String,
+        analysis: SymptomAnalysis,
+        locations: List<SymptomLocation> = emptyList(),
+    ): Resource<Case>
 }

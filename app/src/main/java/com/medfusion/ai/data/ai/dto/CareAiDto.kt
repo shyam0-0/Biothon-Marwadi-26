@@ -13,12 +13,14 @@ data class ProgressAnalysisDto(
     @Json(name = "status") val status: String?,
     @Json(name = "summary") val summary: String?,
     @Json(name = "followUpRecommended") val followUpRecommended: Boolean?,
+    @Json(name = "followUpReason") val followUpReason: String?,
 )
 
 fun ProgressAnalysisDto.toDomain() = ProgressAnalysis(
     status = status?.trim().orEmpty().ifEmpty { "Recovery in progress" },
     summary = summary?.trim().orEmpty(),
     followUpRecommended = followUpRecommended ?: false,
+    followUpReason = followUpReason?.trim()?.takeIf { it.isNotEmpty() },
 )
 
 /** JSON contract for an AI-generated wellness plan (Phase 3). */

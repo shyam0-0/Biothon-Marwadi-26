@@ -97,7 +97,10 @@ fun SymptomAnalysisScreen(
             AnalysisStage.Analyzing ->
                 LoadingView(
                     modifier = Modifier.padding(padding),
-                    message = "Analysing your symptoms…",
+                    message = if (state.attachments.isNotEmpty())
+                        "Reviewing your reports and health history, then updating the analysis…"
+                    else
+                        "Reviewing your health history and analysing your symptoms…",
                 )
 
             is AnalysisStage.Failed ->
@@ -108,8 +111,11 @@ fun SymptomAnalysisScreen(
             AnalysisStage.Input ->
                 InputContent(
                     symptoms = state.symptoms,
+                    locations = state.locations,
                     validationError = state.validationError,
                     onSymptomsChange = viewModel::onSymptomsChange,
+                    onAddLocation = viewModel::addLocation,
+                    onRemoveLocation = viewModel::removeLocation,
                     onAnalyze = viewModel::analyze,
                     modifier = modifier.padding(padding),
                 )
@@ -134,8 +140,11 @@ fun SymptomAnalysisScreen(
 @Composable
 private fun InputContent(
     symptoms: String,
+    locations: List<com.medfusion.ai.domain.model.SymptomLocation>,
     validationError: String?,
     onSymptomsChange: (String) -> Unit,
+    onAddLocation: (com.medfusion.ai.domain.model.SymptomLocation) -> Unit,
+    onRemoveLocation: (com.medfusion.ai.domain.model.BodyRegion) -> Unit,
     onAnalyze: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -162,6 +171,12 @@ private fun InputContent(
             shape = MaterialTheme.shapes.medium,
             isError = validationError != null,
             supportingText = validationError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+        )
+        // Smart symptom localization (Phase 5.6) — always optional.
+        SymptomLocalizationSection(
+            locations = locations,
+            onAdd = onAddLocation,
+            onRemove = onRemoveLocation,
         )
         PrimaryButton(text = "Analyse my symptoms", onClick = onAnalyze)
         InfoBanner(text = stringResource(R.string.ai_disclaimer))
@@ -215,9 +230,12 @@ private fun ResultContent(
             ConditionsCard(analysis)
         }
 
+        analysis.confidenceExplanation?.let { ConfidenceEvolutionCard(it) }
+        analysis.reportInsights?.let { ReportInsightsCard(it) }
+
         InfoBanner(text = stringResource(R.string.ai_disclaimer))
 
-        BulletCard("Recommended tests", analysis.recommendedTests, Icons.Outlined.Biotech)
+        TestsCard(analysis.recommendedTests)
         BulletCard("Recommended scans", analysis.recommendedScans, Icons.Outlined.Science)
         BulletCard("Home care", analysis.homeCare, Icons.Outlined.Home)
         BulletCard("Precautions", analysis.precautions, Icons.Outlined.Shield)
@@ -292,7 +310,112 @@ private fun ConditionsCard(analysis: SymptomAnalysis) {
                 progress = { (condition.confidence / 100f).coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxWidth().height(6.dp),
             )
+            if (condition.reason.isNotBlank()) {
+                Spacer(Modifier.height(Spacing.xs))
+                Text(
+                    condition.reason,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Spacer(Modifier.height(Spacing.sm))
+        }
+    }
+}
+
+/** Why the confidence values changed after reports/history were factored in (Phase 5). */
+@Composable
+private fun ConfidenceEvolutionCard(explanation: String) {
+    MedFusionCard(contentPadding = Spacing.lg) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.MonitorHeart, contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(Spacing.sm))
+            Text("Why confidence changed", style = MaterialTheme.typography.titleMedium)
+        }
+        Spacer(Modifier.height(Spacing.sm))
+        Text(explanation, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/** Structured findings extracted from uploaded reports (Phase 5). */
+@Composable
+private fun ReportInsightsCard(insights: com.medfusion.ai.domain.model.ReportInsights) {
+    MedFusionCard(contentPadding = Spacing.lg) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.HealthAndSafety, contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(Spacing.sm))
+            Text("Report findings", style = MaterialTheme.typography.titleMedium)
+        }
+        Spacer(Modifier.height(Spacing.sm))
+        Text(insights.summary, style = MaterialTheme.typography.bodyMedium)
+        if (insights.abnormalValues.isNotEmpty()) {
+            Spacer(Modifier.height(Spacing.sm))
+            Text("Abnormal values", style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.semantic.riskRed)
+            insights.abnormalValues.forEach {
+                Text("•  $it", style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = Spacing.xs))
+            }
+        }
+        if (insights.concerns.isNotEmpty()) {
+            Spacer(Modifier.height(Spacing.sm))
+            Text("Possible concerns", style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            insights.concerns.forEach {
+                Text("•  $it", style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = Spacing.xs))
+            }
+        }
+        insights.relevance?.let {
+            Spacer(Modifier.height(Spacing.sm))
+            Text(it, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** Symptom-specific test recommendations with priority + rationale (Phase 5). */
+@Composable
+private fun TestsCard(tests: List<com.medfusion.ai.domain.model.TestRecommendation>) {
+    if (tests.isEmpty()) return
+    MedFusionCard(contentPadding = Spacing.lg) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Biotech, contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(Spacing.sm))
+            Text("Recommended tests", style = MaterialTheme.typography.titleMedium)
+        }
+        Spacer(Modifier.height(Spacing.sm))
+        tests.forEach { test ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(test.name, style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f))
+                Text(
+                    test.priority.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = when (test.priority) {
+                        com.medfusion.ai.domain.model.TestPriority.REQUIRED ->
+                            MaterialTheme.semantic.riskRed
+                        com.medfusion.ai.domain.model.TestPriority.RECOMMENDED ->
+                            MaterialTheme.colorScheme.primary
+                        com.medfusion.ai.domain.model.TestPriority.OPTIONAL ->
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
+            if (test.reason.isNotBlank()) {
+                Text(
+                    test.reason,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -382,13 +505,27 @@ private fun ConsultationSection(
         )
         Spacer(Modifier.height(Spacing.md))
 
-        val specialists = analysis.recommendedSpecialists.ifEmpty { listOf("General Physician") }
+        val specialists = analysis.recommendedSpecialists.ifEmpty {
+            listOf(
+                com.medfusion.ai.domain.model.SpecialistRecommendation(
+                    "General Physician", "Best suited for an initial evaluation of your symptoms."
+                )
+            )
+        }
         specialists.forEach { specialist ->
             PrimaryButton(
-                text = "Consult $specialist",
+                text = "Consult ${specialist.name}",
                 loading = creatingCase,
-                onClick = { onConsult(specialist) },
+                onClick = { onConsult(specialist.name) },
             )
+            if (specialist.reason.isNotBlank()) {
+                Spacer(Modifier.height(Spacing.xs))
+                Text(
+                    specialist.reason,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Spacer(Modifier.height(Spacing.sm))
         }
         consultError?.let {

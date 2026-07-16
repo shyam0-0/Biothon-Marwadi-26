@@ -226,6 +226,12 @@ private fun ProgressCard(progress: ProgressAnalysis) {
             Text("A follow-up appointment is recommended.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.semantic.riskRed)
         }
+        // Smart Follow-up (Phase 5): always explain WHY.
+        progress.followUpReason?.let {
+            Spacer(Modifier.height(Spacing.xs))
+            Text(it, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 

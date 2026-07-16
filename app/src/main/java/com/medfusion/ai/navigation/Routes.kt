@@ -32,6 +32,14 @@ object Routes {
     const val CARE_PLAN = "care_plan"
     const val VITALS_MONITOR = "vitals_monitor"
 
+    // Patient Passport (Phase 5)
+    const val PATIENT_PASSPORT = "patient_passport"
+
+    // Doctor portal (Phase 6)
+    const val DOCTOR_PATIENTS = "doctor_patients"
+    const val DOCTOR_PATIENT_PROFILE = "doctor_patient/{patientId}?patientName={patientName}"
+    const val DOCTOR_SCHEDULE = "doctor_schedule"
+
     // Settings (Phase 12)
     const val SETTINGS = "settings"
 
@@ -42,6 +50,8 @@ object Routes {
         const val URGENCY = "urgency"
         const val SPECIALTY = "specialty"
         const val APPOINTMENT_ID = "appointmentId"
+        const val PATIENT_ID = "patientId"
+        const val PATIENT_NAME = "patientName"
     }
 
     // --- Type-safe builders for parameterized routes -------------------------
@@ -60,6 +70,13 @@ object Routes {
     fun bookFollowUp(specialty: String = "") =
         bookAppointment(FOLLOW_UP_CASE, "green", specialty)
     fun videoCall(appointmentId: String) = "video_call/$appointmentId"
+
+    /** Doctor patient directory → read-only patient profile (Phase 6). */
+    fun doctorPatientProfile(patientId: String, patientName: String): String {
+        val encoded = java.net.URLEncoder.encode(patientName.ifBlank { "Patient" }, "UTF-8")
+            .replace("+", "%20")
+        return "doctor_patient/$patientId?patientName=$encoded"
+    }
     fun doctorConsultation(appointmentId: String) = "doctor_consultation/$appointmentId"
     fun prescription(appointmentId: String) = "prescription/$appointmentId"
 

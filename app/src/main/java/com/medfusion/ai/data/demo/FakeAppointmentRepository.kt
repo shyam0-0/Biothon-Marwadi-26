@@ -107,7 +107,9 @@ class FakeAppointmentRepository @Inject constructor() : AppointmentRepository {
         appointments.map { list -> list.sortedByDescending { it.createdAtMillis } }
 
     override suspend fun getOrCreateRoom(appointmentId: String): Resource<String> {
-        val url = "https://medfusion.daily.co/demo-${appointmentId.take(8)}"
+        // Jitsi Meet rooms exist automatically when opened — no backend or account
+        // needed. Deterministic per appointment, so patient and doctor share it.
+        val url = "https://meet.jit.si/MedFusion-$appointmentId"
         appointments.value = appointments.value.map {
             if (it.id == appointmentId) it.copy(roomUrl = url) else it
         }

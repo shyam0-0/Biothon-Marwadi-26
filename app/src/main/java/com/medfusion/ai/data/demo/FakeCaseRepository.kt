@@ -8,6 +8,7 @@ import com.medfusion.ai.domain.model.CaseStatus
 import com.medfusion.ai.domain.model.ConfidenceLevel
 import com.medfusion.ai.domain.model.FusionResult
 import com.medfusion.ai.domain.model.SymptomAnalysis
+import com.medfusion.ai.domain.model.SymptomLocation
 import com.medfusion.ai.domain.model.UrgencyLevel
 import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CaseRepository
@@ -108,6 +109,7 @@ class FakeCaseRepository @Inject constructor(
     override suspend fun createCaseFromAnalysis(
         symptoms: String,
         analysis: SymptomAnalysis,
+        locations: List<SymptomLocation>,
     ): Resource<Case> {
         val caseId = UUID.randomUUID().toString()
         val urgency = analysis.severity.toUrgency()
@@ -117,7 +119,7 @@ class FakeCaseRepository @Inject constructor(
             userId = authRepository.currentUserId() ?: DemoData.PATIENT_ID,
             symptomsText = symptoms.trim(),
             recommendedTest = analysis.recommendedScans.firstOrNull()
-                ?: analysis.recommendedTests.firstOrNull()
+                ?: analysis.recommendedTests.firstOrNull()?.name
                 ?: "Doctor consultation",
             urgencyLevel = urgency,
             status = CaseStatus.ANALYZED,
@@ -131,6 +133,7 @@ class FakeCaseRepository @Inject constructor(
                 },
                 confidenceLevel = ConfidenceLevel.fromScore(topConfidence / 100.0),
             ),
+            symptomLocations = locations,
         )
         cases[caseId] = case
         return Resource.Success(case)

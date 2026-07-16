@@ -29,6 +29,9 @@ object FirestoreSchema {
         const val FUSION_RESULT = "fusionResult"
         const val CREATED_AT = "createdAt"
         const val UPDATED_AT = "updatedAt"
+        // Body-map symptom localization (Phase 5.6): list of maps
+        // {region, descriptor, severity, duration, progression}.
+        const val SYMPTOM_LOCATIONS = "symptomLocations"
     }
 
     object Appointments {
@@ -117,6 +120,47 @@ object FirestoreSchema {
         const val TYPE = "type"          // e.g. "medication"
         const val STATUS = "status"      // pending | approved | rejected
         const val CREATED_AT = "createdAt"
+    }
+
+    object Passports {
+        const val COLLECTION = "patient_passports"
+        const val FULL_NAME = "fullName"
+        const val AGE = "age"
+        const val GENDER = "gender"
+        const val BLOOD_GROUP = "bloodGroup"
+        const val HEIGHT_CM = "heightCm"
+        const val WEIGHT_KG = "weightKg"
+        const val PHOTO_URL = "photoUrl"
+        const val CONTACT_NUMBER = "contactNumber"
+        const val EMERGENCY_CONTACT = "emergencyContact"
+        const val ALLERGIES = "allergies"
+        const val CHRONIC_DISEASES = "chronicDiseases"
+        const val CURRENT_MEDICATIONS = "currentMedications"
+        const val PREVIOUS_DIAGNOSES = "previousDiagnoses"
+        const val PREVIOUS_SURGERIES = "previousSurgeries"
+        const val VACCINATIONS = "vaccinations"
+        const val SMOKER = "smoker"
+        const val ALCOHOL = "alcohol"
+        const val PREGNANT = "pregnant"
+        const val UPDATED_AT = "updatedAt"
+
+        // Subcollection: stored AI consultations (Phase 5 AI history).
+        const val AI_HISTORY = "ai_history"
+        const val AI_DATE = "dateMillis"
+        const val AI_SYMPTOMS = "symptoms"
+        const val AI_SUMMARY = "summary"
+        const val AI_CONDITIONS = "conditions"      // list of maps: name/confidence/reason
+        const val AI_SEVERITY = "severity"
+        const val AI_TESTS = "recommendedTests"
+        const val AI_SPECIALIST = "recommendedSpecialist"
+        const val AI_LOCATIONS = "locations"        // list of summary strings (Phase 5.6)
+
+        // Subcollection: the automatic medical timeline (Phase 5).
+        const val TIMELINE = "timeline"
+        const val EVENT_TYPE = "type"
+        const val EVENT_TITLE = "title"
+        const val EVENT_DETAIL = "detail"
+        const val EVENT_DATE = "dateMillis"
     }
 
     object EmergencyEvents {

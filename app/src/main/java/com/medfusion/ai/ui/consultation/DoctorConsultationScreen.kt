@@ -42,6 +42,7 @@ import com.medfusion.ai.domain.model.Case
 import com.medfusion.ai.domain.model.Medication
 import com.medfusion.ai.ui.components.InfoBanner
 import com.medfusion.ai.ui.components.MedFusionCard
+import com.medfusion.ai.ui.theme.semantic
 import com.medfusion.ai.ui.components.MedFusionScaffold
 import com.medfusion.ai.ui.components.PrimaryButton
 import com.medfusion.ai.ui.components.SecondaryButton
@@ -131,26 +132,19 @@ private fun ConsultationBody(
             AiPreRead(state.aiCase)
         }
 
-        PrimaryButton(text = "Join Video Call", leadingIcon = Icons.Outlined.Videocam, onClick = onJoinCall)
+        // AI Consultation Brief (Phase 6): a 15-second preparation summary.
+        state.brief?.let { ConsultationBriefCard(it) }
 
         RecoveryHistory(state)
+
+        PrimaryButton(text = "Join Video Call", leadingIcon = Icons.Outlined.Videocam, onClick = onJoinCall)
 
         if (state.completed) {
             CompletedCard(onDone)
             return@Column
         }
 
-        // Notes
-        SectionLabel("Consultation notes")
-        OutlinedTextField(
-            value = state.notes,
-            onValueChange = onNotesChange,
-            modifier = Modifier.fillMaxWidth().height(100.dp),
-            placeholder = { Text("Observations from the consultation…") },
-            shape = MaterialTheme.shapes.medium,
-        )
-
-        // Diagnosis
+        // Linear clinical workflow (Phase 6): diagnosis → notes → prescription.
         SectionLabel("Diagnosis")
         OutlinedTextField(
             value = state.diagnosis,
@@ -159,6 +153,15 @@ private fun ConsultationBody(
             placeholder = { Text("e.g. Acute bronchitis") },
             singleLine = true,
             isError = state.error != null && state.diagnosis.isBlank(),
+            shape = MaterialTheme.shapes.medium,
+        )
+
+        SectionLabel("Consultation notes")
+        OutlinedTextField(
+            value = state.notes,
+            onValueChange = onNotesChange,
+            modifier = Modifier.fillMaxWidth().height(100.dp),
+            placeholder = { Text("Observations from the consultation…") },
             shape = MaterialTheme.shapes.medium,
         )
 
@@ -206,6 +209,42 @@ private fun ConsultationBody(
     }
 }
 
+/**
+ * AI Consultation Brief (Phase 6): one card, readable in ~15 seconds. A clinical
+ * preparation summary only — never a diagnosis, never a conversation.
+ */
+@Composable
+private fun ConsultationBriefCard(brief: com.medfusion.ai.viewmodel.ConsultationBrief) {
+    MedFusionCard {
+        Text("AI Consultation Brief", style = MaterialTheme.typography.titleMedium)
+        brief.redFlagNote?.let {
+            Spacer(Modifier.height(4.dp))
+            Text(it, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.semantic.riskRed)
+        }
+        BriefRow("Complaint", brief.complaint)
+        BriefRow("Symptoms", brief.symptoms)
+        BriefRow("Localization", brief.locations.joinToString("; "))
+        BriefRow("Top conditions", brief.topConditions.joinToString(", ") +
+            (brief.severityLabel?.let { " • $it severity" } ?: ""))
+        BriefRow("Previous diagnosis", brief.previousDiagnosis.orEmpty())
+        BriefRow("Medications", brief.medications.joinToString(", "))
+        BriefRow("Allergies", brief.allergies.joinToString(", "))
+        BriefRow("Reports", brief.reportsSummary.orEmpty())
+        Spacer(Modifier.height(4.dp))
+        Text("Preparation summary from patient records and AI analysis — not a diagnosis.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun BriefRow(label: String, value: String) {
+    if (value.isBlank()) return
+    Spacer(Modifier.height(4.dp))
+    Text("$label: $value", style = MaterialTheme.typography.bodySmall)
+}
+
 @Composable
 private fun AiPreRead(aiCase: Case?) {
     if (aiCase == null) return
@@ -219,6 +258,11 @@ private fun AiPreRead(aiCase: Case?) {
         Text("Reported symptoms: ${aiCase.symptomsText}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    // Body-map localization from the patient (Phase 5.6).
+    if (aiCase.symptomLocations.isNotEmpty()) {
+        Spacer(Modifier.height(8.dp))
+        com.medfusion.ai.ui.symptom.SymptomMapSummary(aiCase.symptomLocations)
     }
     val xray = aiCase.xrayUrl
     val lab = aiCase.labReportUrl

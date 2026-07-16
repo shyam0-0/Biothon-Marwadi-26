@@ -149,6 +149,7 @@ class CaseRepositoryImpl @Inject constructor(
     override suspend fun createCaseFromAnalysis(
         symptoms: String,
         analysis: SymptomAnalysis,
+        locations: List<com.medfusion.ai.domain.model.SymptomLocation>,
     ): Resource<Case> = withContext(io) {
         resourceOf {
             val userId = auth.currentUser?.uid ?: fail(AppError.Unauthorized())
@@ -156,7 +157,7 @@ class CaseRepositoryImpl @Inject constructor(
             val caseId = docRef.id
             val urgency = analysis.severity.toUrgency()
             val recommendedTest = analysis.recommendedScans.firstOrNull()
-                ?: analysis.recommendedTests.firstOrNull()
+                ?: analysis.recommendedTests.firstOrNull()?.name
                 ?: "Doctor consultation"
             val topConfidence = analysis.conditions.maxOfOrNull { it.confidence } ?: 0
             val score = topConfidence / 100.0
@@ -178,6 +179,7 @@ class CaseRepositoryImpl @Inject constructor(
                 Cases.URGENCY_LEVEL to urgency.wireValue,
                 Cases.STATUS to CaseStatus.ANALYZED.wireValue,
                 Cases.FUSION_RESULT to fusion.toMap(),
+                Cases.SYMPTOM_LOCATIONS to locations.toMaps(),
                 Cases.CREATED_AT to FieldValue.serverTimestamp(),
                 Cases.UPDATED_AT to FieldValue.serverTimestamp(),
             )
@@ -191,6 +193,7 @@ class CaseRepositoryImpl @Inject constructor(
                 urgencyLevel = urgency,
                 status = CaseStatus.ANALYZED,
                 fusionResult = fusion,
+                symptomLocations = locations,
             )
         }
     }

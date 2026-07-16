@@ -44,6 +44,7 @@ fun PatientAppointmentsScreen(
     viewModel: PatientAppointmentsViewModel = hiltViewModel(),
 ) {
     val appointments by viewModel.appointments.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     MedFusionScaffold(title = "My Appointments", onBack = onBack) { padding ->
         if (appointments.isEmpty()) {
@@ -59,6 +60,15 @@ fun PatientAppointmentsScreen(
                 contentPadding = PaddingValues(Sizes.screenPadding),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
+                error?.let {
+                    item {
+                        Text(
+                            it.userMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
                 items(appointments, key = { it.id }) { appointment ->
                     PatientAppointmentCard(
                         appointment = appointment,

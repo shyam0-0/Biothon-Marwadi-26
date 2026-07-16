@@ -14,7 +14,6 @@ import com.medfusion.ai.data.firebase.FirestoreSchema.DoctorAvailability
 import com.medfusion.ai.data.firebase.FirestoreSchema.Doctors
 import com.medfusion.ai.data.firebase.FirestoreSchema.Users
 import com.medfusion.ai.data.remote.MedFusionApi
-import com.medfusion.ai.data.remote.dto.CreateRoomRequest
 import com.medfusion.ai.di.IoDispatcher
 import com.medfusion.ai.domain.model.Appointment
 import com.medfusion.ai.domain.model.AppointmentStatus
@@ -231,18 +230,15 @@ class AppointmentRepositoryImpl @Inject constructor(
             resourceOf {
                 val docRef = appointments().document(appointmentId)
                 val existing = docRef.get().await().getString(Appointments.ROOM_URL)
-                if (!existing.isNullOrBlank()) return@resourceOf existing
-
-                val url = try {
-                    api.createRoom(CreateRoomRequest(appointmentId)).roomUrl
-                } catch (t: Throwable) {
-                    val error = t.toAppError()
-                    val recoverable = error is AppError.Network || error is AppError.Timeout || error is AppError.Server
-                    if (BuildConfig.USE_MOCK_AI_FALLBACK && recoverable) {
-                        // Demo fallback: a deterministic room name per appointment.
-                        "$DEMO_ROOM_BASE/medfusion-${appointmentId.take(8)}"
-                    } else throw t
+                // Older appointments may still carry a dead Daily.co URL — regenerate those.
+                if (!existing.isNullOrBlank() && existing.startsWith(JITSI_ROOM_BASE)) {
+                    return@resourceOf existing
                 }
+
+                // Jitsi Meet rooms exist automatically when opened — no server-side
+                // room creation needed. Deterministic per appointment, so the patient
+                // and the doctor always land in the same room.
+                val url = "$JITSI_ROOM_BASE/MedFusion-$appointmentId"
                 docRef.update(Appointments.ROOM_URL, url).await()
                 url
             }
@@ -261,9 +257,9 @@ class AppointmentRepositoryImpl @Inject constructor(
     )
 
     private companion object {
-        // Replace with your Daily.co subdomain in production; only used as a
-        // deterministic demo room when the backend /create-room is unavailable.
-        const val DEMO_ROOM_BASE = "https://medfusion.daily.co"
+        // Jitsi Meet: free, no backend, rooms auto-created on first join. Swap the
+        // VideoProvider binding (and this base) to move to another provider later.
+        const val JITSI_ROOM_BASE = "https://meet.jit.si"
         val DEFAULT_SLOTS = listOf("09:00 AM", "10:30 AM", "12:00 PM", "03:00 PM", "04:30 PM")
     }
 }

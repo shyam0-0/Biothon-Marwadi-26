@@ -10,8 +10,8 @@ data class SymptomAnalysis(
     val conditions: List<ConditionProbability>,
     val severity: Severity,
     val emergencyMessage: String?,
-    val recommendedSpecialists: List<String>,
-    val recommendedTests: List<String>,
+    val recommendedSpecialists: List<SpecialistRecommendation>,
+    val recommendedTests: List<TestRecommendation>,
     val recommendedScans: List<String>,
     val homeCare: List<String>,
     val precautions: List<String>,
@@ -19,12 +19,52 @@ data class SymptomAnalysis(
     /** e.g. "A chest X-ray may improve analysis if available." Null if none. */
     val reportRecommendation: String?,
     val consultationRecommended: Boolean,
+    /** Why confidence changed vs. earlier analyses/reports (Phase 5). Null on a first pass. */
+    val confidenceExplanation: String? = null,
+    /** Structured findings from uploaded reports (Phase 5). Null when none uploaded. */
+    val reportInsights: ReportInsights? = null,
 )
 
 /** A candidate condition with an estimated confidence percentage (0–100). */
 data class ConditionProbability(
     val name: String,
     val confidence: Int,
+    /** Short explanation of why this condition is suspected (Phase 5). */
+    val reason: String = "",
+)
+
+/** A specialist chosen from the predicted conditions + symptoms, with the WHY (Phase 5). */
+data class SpecialistRecommendation(
+    val name: String,
+    val reason: String = "",
+)
+
+/** A symptom-driven test recommendation with priority and rationale (Phase 5). */
+data class TestRecommendation(
+    val name: String,
+    val priority: TestPriority = TestPriority.RECOMMENDED,
+    val reason: String = "",
+)
+
+enum class TestPriority(val wireValue: String, val label: String) {
+    REQUIRED("required", "Required"),
+    RECOMMENDED("recommended", "Recommended"),
+    OPTIONAL("optional", "Optional");
+
+    companion object {
+        fun fromWire(value: String?): TestPriority =
+            entries.firstOrNull { it.wireValue.equals(value?.trim(), ignoreCase = true) }
+                ?: RECOMMENDED
+    }
+}
+
+/** What the AI extracted from uploaded medical reports (Phase 5). */
+data class ReportInsights(
+    val summary: String,
+    val abnormalValues: List<String> = emptyList(),
+    val concerns: List<String> = emptyList(),
+    /** How the report affects the assessment — or why it doesn't contribute. */
+    val relevance: String? = null,
 )
 
 /** AI-estimated urgency of the presentation. */

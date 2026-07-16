@@ -3,10 +3,12 @@ package com.medfusion.ai.data.repository
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.medfusion.ai.data.firebase.FirestoreSchema.Cases
+import com.medfusion.ai.domain.model.BodyRegion
 import com.medfusion.ai.domain.model.Case
 import com.medfusion.ai.domain.model.CaseStatus
 import com.medfusion.ai.domain.model.ConfidenceLevel
 import com.medfusion.ai.domain.model.FusionResult
+import com.medfusion.ai.domain.model.SymptomLocation
 import com.medfusion.ai.domain.model.UrgencyLevel
 
 /**
@@ -45,6 +47,30 @@ fun DocumentSnapshot.toCase(): Case? {
         labReportUrl = getString(Cases.LAB_REPORT_URL),
         fusionResult = fusion,
         createdAtMillis = (get(Cases.CREATED_AT) as? Timestamp)?.toDate()?.time ?: 0L,
+        symptomLocations = (get(Cases.SYMPTOM_LOCATIONS) as? List<*>).orEmpty()
+            .mapNotNull { (it as? Map<*, *>)?.toSymptomLocation() },
+    )
+}
+
+private fun Map<*, *>.toSymptomLocation(): SymptomLocation? {
+    val region = BodyRegion.fromWire(this["region"] as? String) ?: return null
+    return SymptomLocation(
+        region = region,
+        descriptor = this["descriptor"] as? String ?: "Pain",
+        severity = (this["severity"] as? Number)?.toInt() ?: 0,
+        duration = this["duration"] as? String ?: "",
+        progression = this["progression"] as? String ?: "",
+    )
+}
+
+/** Serializes body-map locations for the "symptomLocations" field. */
+fun List<SymptomLocation>.toMaps(): List<Map<String, Any>> = map {
+    mapOf(
+        "region" to it.region.wireValue,
+        "descriptor" to it.descriptor,
+        "severity" to it.severity,
+        "duration" to it.duration,
+        "progression" to it.progression,
     )
 }
 

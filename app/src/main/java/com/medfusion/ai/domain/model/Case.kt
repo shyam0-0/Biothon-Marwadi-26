@@ -17,6 +17,8 @@ data class Case(
     val labReportUrl: String? = null,
     val fusionResult: FusionResult? = null,
     val createdAtMillis: Long = 0L,
+    /** Body-map symptom localization (Phase 5.6), shown to the doctor pre-read. */
+    val symptomLocations: List<SymptomLocation> = emptyList(),
 )
 
 /** Lifecycle of a [Case] as it moves through the patient journey. */

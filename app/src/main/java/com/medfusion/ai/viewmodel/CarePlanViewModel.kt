@@ -13,8 +13,11 @@ import com.medfusion.ai.domain.model.CareSuggestion
 import com.medfusion.ai.domain.model.DailyLog
 import com.medfusion.ai.domain.model.Mood
 import com.medfusion.ai.domain.model.ProgressAnalysis
+import com.medfusion.ai.domain.model.TimelineEvent
+import com.medfusion.ai.domain.model.TimelineEventType
 import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CareRepository
+import com.medfusion.ai.domain.repository.PassportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +44,7 @@ class CarePlanViewModel @Inject constructor(
     private val careRepository: CareRepository,
     private val ruleEngine: CareRuleEngine,
     private val aiService: AiService,
+    private val passportRepository: PassportRepository,
 ) : ViewModel() {
 
     private val patientId: String? = authRepository.currentUserId()
@@ -117,6 +121,30 @@ class CarePlanViewModel @Inject constructor(
             )
             when (val result = careRepository.submitDailyLog(pid, log)) {
                 is Resource.Success -> {
+                    // Passport timeline (Phase 5): each check-in joins the journey.
+                    // One event per day — resubmitting today's check-in updates the
+                    // log (doc id = date) and must not duplicate the timeline.
+                    val alreadyLogged = (passportRepository.getTimeline(pid) as? Resource.Success)
+                        ?.data.orEmpty()
+                        .any {
+                            it.type == TimelineEventType.DAILY_CHECK_IN &&
+                                java.time.Instant.ofEpochMilli(it.dateMillis)
+                                    .atZone(java.time.ZoneId.systemDefault())
+                                    .toLocalDate()
+                                    .toString() == log.date
+                        }
+                    if (!alreadyLogged) {
+                        passportRepository.addTimelineEvent(
+                            pid,
+                            TimelineEvent(
+                                type = TimelineEventType.DAILY_CHECK_IN,
+                                title = "Daily Check-in",
+                                detail = "Pain ${log.painLevel}/10 • mood ${log.mood.label} • " +
+                                    "medication ${if (log.medicationTaken) "taken" else "missed"}",
+                                dateMillis = System.currentTimeMillis(),
+                            ),
+                        )
+                    }
                     _uiState.update { it.copy(submitting = false, checkInDone = true) }
                     load(fileApprovals = true)
                 }
@@ -138,6 +166,15 @@ class CarePlanViewModel @Inject constructor(
             )) {
                 is Resource.Success -> {
                     careRepository.saveCarePlan(result.data.copy(patientId = pid))
+                    passportRepository.addTimelineEvent(
+                        pid,
+                        TimelineEvent(
+                            type = TimelineEventType.CARE_PLAN_STARTED,
+                            title = "Care Plan Started",
+                            detail = "AI wellness plan accepted for minor symptoms",
+                            dateMillis = System.currentTimeMillis(),
+                        ),
+                    )
                     _uiState.update { it.copy(generatingPlan = false) }
                     load(fileApprovals = false)
                 }

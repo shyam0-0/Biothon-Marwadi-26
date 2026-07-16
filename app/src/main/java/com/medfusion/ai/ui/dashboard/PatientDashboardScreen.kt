@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Favorite
@@ -42,6 +43,7 @@ fun PatientDashboardScreen(
     onOpenAppointments: () -> Unit,
     onOpenCarePlan: () -> Unit,
     onOpenVitals: () -> Unit,
+    onOpenPassport: () -> Unit,
     onOpenSettings: () -> Unit,
     onLoggedOut: () -> Unit,
     modifier: Modifier = Modifier,
@@ -96,6 +98,12 @@ fun PatientDashboardScreen(
                 subtitle = "Describe your symptoms and get a recommended test",
                 icon = Icons.Outlined.MedicalServices,
                 onClick = onStartTriage,
+            )
+            ActionCard(
+                title = "Patient passport",
+                subtitle = "Your health profile, AI history and medical timeline",
+                icon = Icons.Outlined.Badge,
+                onClick = onOpenPassport,
             )
             ActionCard(
                 title = "My appointments",

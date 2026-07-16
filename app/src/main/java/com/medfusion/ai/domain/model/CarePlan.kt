@@ -40,6 +40,8 @@ data class ProgressAnalysis(
     val status: String,          // e.g. "Recovery improving"
     val summary: String,
     val followUpRecommended: Boolean,
+    /** Why a follow-up is (or isn't) recommended — Smart Follow-up (Phase 5). */
+    val followUpReason: String? = null,
 )
 
 data class Medication(

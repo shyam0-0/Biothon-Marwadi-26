@@ -9,8 +9,12 @@ import com.medfusion.ai.core.util.UiState
 import com.medfusion.ai.domain.model.Appointment
 import com.medfusion.ai.domain.model.AvailabilitySlot
 import com.medfusion.ai.domain.model.Doctor
+import com.medfusion.ai.domain.model.TimelineEvent
+import com.medfusion.ai.domain.model.TimelineEventType
 import com.medfusion.ai.domain.model.UrgencyLevel
 import com.medfusion.ai.domain.repository.AppointmentRepository
+import com.medfusion.ai.domain.repository.AuthRepository
+import com.medfusion.ai.domain.repository.PassportRepository
 import com.medfusion.ai.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -42,6 +46,8 @@ data class BookingUiState(
 class BookAppointmentViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val appointmentRepository: AppointmentRepository,
+    private val authRepository: AuthRepository,
+    private val passportRepository: PassportRepository,
 ) : ViewModel() {
 
     private val caseId: String? = savedStateHandle.get<String>(Routes.Args.CASE_ID)
@@ -127,6 +133,19 @@ class BookAppointmentViewModel @Inject constructor(
             )) {
                 is Resource.Success -> {
                     _uiState.update { it.copy(isBooking = false) }
+                    // Passport timeline (Phase 5): the booking becomes part of the
+                    // patient's medical journey automatically.
+                    authRepository.currentUserId()?.let { pid ->
+                        passportRepository.addTimelineEvent(
+                            pid,
+                            TimelineEvent(
+                                type = TimelineEventType.APPOINTMENT_BOOKED,
+                                title = "Appointment Booked",
+                                detail = "${doctor.name} ($specialty) • $date at ${slot.timeSlot}",
+                                dateMillis = System.currentTimeMillis(),
+                            ),
+                        )
+                    }
                     _events.emit(result.data)
                 }
                 is Resource.Error ->
