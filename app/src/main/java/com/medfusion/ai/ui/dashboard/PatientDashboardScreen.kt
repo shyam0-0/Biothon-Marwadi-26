@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medfusion.ai.ui.components.ActionCard
 import com.medfusion.ai.ui.components.MedFusionScaffold
+import com.medfusion.ai.ui.notifications.NotificationBell
 import com.medfusion.ai.ui.theme.Sizes
 import com.medfusion.ai.ui.theme.Spacing
 import com.medfusion.ai.viewmodel.PatientDashboardViewModel
@@ -45,6 +46,7 @@ fun PatientDashboardScreen(
     onOpenVitals: () -> Unit,
     onOpenPassport: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenNotifications: () -> Unit,
     onLoggedOut: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SessionViewModel = hiltViewModel(),
@@ -57,6 +59,7 @@ fun PatientDashboardScreen(
     MedFusionScaffold(
         title = "MedFusion",
         actions = {
+            NotificationBell(onOpen = onOpenNotifications)
             IconButton(onClick = onOpenSettings) {
                 Icon(Icons.Outlined.Settings, contentDescription = "Settings")
             }

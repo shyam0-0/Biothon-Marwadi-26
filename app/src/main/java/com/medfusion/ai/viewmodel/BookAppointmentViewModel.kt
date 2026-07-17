@@ -6,14 +6,18 @@ import androidx.lifecycle.viewModelScope
 import com.medfusion.ai.core.util.AppError
 import com.medfusion.ai.core.util.Resource
 import com.medfusion.ai.core.util.UiState
+import com.medfusion.ai.domain.model.AppNotification
 import com.medfusion.ai.domain.model.Appointment
 import com.medfusion.ai.domain.model.AvailabilitySlot
 import com.medfusion.ai.domain.model.Doctor
+import com.medfusion.ai.domain.model.NotificationKind
 import com.medfusion.ai.domain.model.TimelineEvent
 import com.medfusion.ai.domain.model.TimelineEventType
 import com.medfusion.ai.domain.model.UrgencyLevel
+import com.medfusion.ai.domain.model.UserRole
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import com.medfusion.ai.domain.repository.AuthRepository
+import com.medfusion.ai.domain.repository.NotificationRepository
 import com.medfusion.ai.domain.repository.PassportRepository
 import com.medfusion.ai.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -48,6 +52,7 @@ class BookAppointmentViewModel @Inject constructor(
     private val appointmentRepository: AppointmentRepository,
     private val authRepository: AuthRepository,
     private val passportRepository: PassportRepository,
+    private val notificationRepository: NotificationRepository,
 ) : ViewModel() {
 
     private val caseId: String? = savedStateHandle.get<String>(Routes.Args.CASE_ID)
@@ -146,6 +151,26 @@ class BookAppointmentViewModel @Inject constructor(
                             ),
                         )
                     }
+                    // Notification center (Phase 6.5): confirm to the patient,
+                    // alert the doctor portal of the new request.
+                    val detail = "${doctor.name} • $date ${slot.timeSlot}"
+                    notificationRepository.post(
+                        AppNotification(
+                            audience = UserRole.PATIENT,
+                            kind = NotificationKind.APPOINTMENT_BOOKED,
+                            detail = detail,
+                            route = Routes.PATIENT_APPOINTMENTS,
+                        ),
+                    )
+                    notificationRepository.post(
+                        AppNotification(
+                            audience = UserRole.DOCTOR,
+                            kind = if (caseId == null) NotificationKind.FOLLOW_UP_BOOKED
+                            else NotificationKind.NEW_APPOINTMENT_REQUEST,
+                            detail = "$date ${slot.timeSlot}",
+                            route = Routes.DOCTOR_DASHBOARD,
+                        ),
+                    )
                     _events.emit(result.data)
                 }
                 is Resource.Error ->

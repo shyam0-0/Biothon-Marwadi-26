@@ -4,12 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.medfusion.ai.core.util.Resource
 import com.medfusion.ai.core.util.UiState
+import com.medfusion.ai.domain.model.AppNotification
 import com.medfusion.ai.domain.model.Appointment
 import com.medfusion.ai.domain.model.AppointmentStatus
 import com.medfusion.ai.domain.model.Case
+import com.medfusion.ai.domain.model.NotificationKind
+import com.medfusion.ai.domain.model.UserRole
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CaseRepository
+import com.medfusion.ai.domain.repository.NotificationRepository
+import com.medfusion.ai.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,6 +34,7 @@ class DoctorDashboardViewModel @Inject constructor(
     authRepository: AuthRepository,
     private val appointmentRepository: AppointmentRepository,
     private val caseRepository: CaseRepository,
+    private val notificationRepository: NotificationRepository,
 ) : ViewModel() {
 
     private val doctorId: String? = authRepository.currentUserId()
@@ -60,18 +66,42 @@ class DoctorDashboardViewModel @Inject constructor(
     fun reschedule(appointmentId: String, epochMillis: Long, timeSlot: String) {
         val date = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate().toString()
         viewModelScope.launch {
-            appointmentRepository.updateStatus(
+            val result = appointmentRepository.updateStatus(
                 appointmentId = appointmentId,
                 status = AppointmentStatus.RESCHEDULED,
                 newDate = date,
                 newTimeSlot = timeSlot,
             )
+            if (result is Resource.Success) {
+                notifyPatient(NotificationKind.APPOINTMENT_RESCHEDULED, "$date $timeSlot")
+            }
         }
     }
 
     private fun updateStatus(appointmentId: String, status: AppointmentStatus) {
         viewModelScope.launch {
-            appointmentRepository.updateStatus(appointmentId, status)
+            val result = appointmentRepository.updateStatus(appointmentId, status)
+            if (result is Resource.Success) {
+                when (status) {
+                    AppointmentStatus.ACCEPTED ->
+                        notifyPatient(NotificationKind.APPOINTMENT_ACCEPTED, null)
+                    AppointmentStatus.DECLINED ->
+                        notifyPatient(NotificationKind.APPOINTMENT_CANCELLED, null)
+                    else -> Unit
+                }
+            }
         }
+    }
+
+    /** Notification center (Phase 6.5): keep the patient informed of queue decisions. */
+    private suspend fun notifyPatient(kind: NotificationKind, detail: String?) {
+        notificationRepository.post(
+            AppNotification(
+                audience = UserRole.PATIENT,
+                kind = kind,
+                detail = detail,
+                route = Routes.PATIENT_APPOINTMENTS,
+            ),
+        )
     }
 }

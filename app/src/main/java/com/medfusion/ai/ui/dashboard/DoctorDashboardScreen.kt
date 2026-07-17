@@ -14,10 +14,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Settings
+import com.medfusion.ai.ui.notifications.NotificationBell
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,6 +62,8 @@ fun DoctorDashboardScreen(
     onOpenPatients: () -> Unit,
     onOpenSchedule: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenNotifications: () -> Unit,
+    onOpenProfile: () -> Unit,
     modifier: Modifier = Modifier,
     sessionViewModel: SessionViewModel = hiltViewModel(),
     viewModel: DoctorDashboardViewModel = hiltViewModel(),
@@ -86,6 +90,10 @@ fun DoctorDashboardScreen(
     MedFusionScaffold(
         title = "Doctor Dashboard",
         actions = {
+            NotificationBell(onOpen = onOpenNotifications)
+            IconButton(onClick = onOpenProfile) {
+                Icon(Icons.Outlined.AccountCircle, contentDescription = "My profile")
+            }
             IconButton(onClick = onOpenSettings) {
                 Icon(Icons.Outlined.Settings, contentDescription = "Settings")
             }

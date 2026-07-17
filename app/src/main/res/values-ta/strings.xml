@@ -35,4 +35,79 @@
     <string name="language_hindi">हिन्दी (Hindi)</string>
     <string name="language_tamil">தமிழ் (Tamil)</string>
     <string name="language_description">ஆப் மற்றும் AI பதில்களுக்கான மொழியைத் தேர்ந்தெடுக்கவும்.</string>
+
+    <string name="generic_error_title">ஏதோ தவறு நடந்தது</string>
+
+    <!-- Phase 6.5: connectivity -->
+    <string name="offline_banner">இணைய இணைப்பு இல்லை — ஆன்லைன் அம்சங்கள் நிறுத்தப்பட்டுள்ளன</string>
+    <string name="offline_title">நீங்கள் ஆஃப்லைனில் உள்ளீர்கள்</string>
+    <string name="offline_reconnect">தொடர மீண்டும் இணைக்கவும்</string>
+
+    <!-- Phase 6.5: notification center -->
+    <string name="notifications">அறிவிப்புகள்</string>
+    <string name="notifications_mark_all_read">அனைத்தையும் படித்ததாகக் குறிக்கவும்</string>
+    <string name="notifications_clear">அனைத்தையும் அழிக்கவும்</string>
+    <string name="notifications_empty_title">அறிவிப்புகள் இல்லை</string>
+    <string name="notifications_empty_subtitle">சந்திப்புகள், மருந்து சீட்டுகள் மற்றும் பராமரிப்புத் திட்டங்களின் புதுப்பிப்புகள் இங்கே தோன்றும்.</string>
+    <string name="notif_appointment_booked">சந்திப்பு பதிவு செய்யப்பட்டது</string>
+    <string name="notif_appointment_accepted">மருத்துவர் உங்கள் சந்திப்பை ஏற்றுக்கொண்டார்</string>
+    <string name="notif_appointment_rescheduled">சந்திப்பு மறுநிர்ணயம் செய்யப்பட்டது</string>
+    <string name="notif_appointment_cancelled">சந்திப்பு ரத்து செய்யப்பட்டது</string>
+    <string name="notif_consultation_soon">ஆலோசனை சுமார் 15 நிமிடங்களில் தொடங்கும்</string>
+    <string name="notif_doctor_joined">உங்கள் மருத்துவர் ஆலோசனையில் இணைந்துள்ளார்</string>
+    <string name="notif_prescription_ready">புதிய மருந்து சீட்டு கிடைக்கிறது</string>
+    <string name="notif_care_plan_ready">புதிய பராமரிப்புத் திட்டம் உருவாக்கப்பட்டது</string>
+    <string name="notif_checkin_reminder">தினசரி பதிவு நினைவூட்டல்</string>
+    <string name="notif_follow_up_reminder">பின்தொடர் சந்திப்பு நினைவூட்டல்</string>
+    <string name="notif_recovery_update">மீட்பு புதுப்பிப்பு கிடைக்கிறது</string>
+    <string name="notif_device_lost">சாதன இணைப்பு துண்டிக்கப்பட்டது</string>
+    <string name="notif_emergency">AI-இன் அவசர பரிந்துரை</string>
+    <string name="notif_new_request">புதிய சந்திப்பு கோரிக்கை</string>
+    <string name="notif_report_uploaded">நோயாளி அறிக்கையை பதிவேற்றினார்</string>
+    <string name="notif_analysis_completed">நோயாளி AI அறிகுறி பகுப்பாய்வை முடித்தார்</string>
+    <string name="notif_consultation_reminder">வரவிருக்கும் ஆலோசனை நினைவூட்டல்</string>
+    <string name="notif_follow_up_booked">பின்தொடர் சந்திப்பு பதிவு செய்யப்பட்டது</string>
+
+    <!-- Phase 6.5: contextual loading -->
+    <string name="loading_analyzing">அறிகுறிகள் பகுப்பாய்வு செய்யப்படுகின்றன…</string>
+    <string name="loading_history">முந்தைய மருத்துவ வரலாறு பரிசீலிக்கப்படுகிறது…</string>
+    <string name="loading_appointment">சந்திப்பு தயாராகிறது…</string>
+    <string name="loading_explanation">AI விளக்கம் உருவாக்கப்படுகிறது…</string>
+    <string name="loading_passport">நோயாளி பாஸ்போர்ட் ஏற்றப்படுகிறது…</string>
+    <string name="loading_consultation">ஆலோசனையுடன் இணைக்கப்படுகிறது…</string>
+    <string name="loading_upload">அறிக்கை பதிவேற்றப்படுகிறது…</string>
+    <string name="loading_checkin">தினசரி பதிவு சேமிக்கப்படுகிறது…</string>
+    <string name="loading_care_plan">பராமரிப்புத் திட்டம் ஒத்திசைக்கப்படுகிறது…</string>
+    <string name="loading_doctors">கிடைக்கும் மருத்துவர்கள் தேடப்படுகிறார்கள்…</string>
+    <string name="loading_prescription">உங்கள் மருந்து சீட்டு ஏற்றப்படுகிறது…</string>
+    <string name="loading_profile">சுயவிவரம் ஏற்றப்படுகிறது…</string>
+
+    <!-- Phase 6.5: empty states -->
+    <string name="empty_appointments_title">இன்னும் சந்திப்புகள் இல்லை</string>
+    <string name="empty_appointments_subtitle">பகுப்பாய்வுக்குப் பிறகு சந்திப்பை பதிவு செய்தால் அது இங்கே தோன்றும்.</string>
+    <string name="empty_care_plan_title">பராமரிப்புத் திட்டம் இல்லை</string>
+    <string name="empty_care_plan_subtitle">ஆலோசனை முடிந்த பிறகு உங்களுக்காக பராமரிப்புத் திட்டம் உருவாக்கப்படும்.</string>
+    <string name="empty_reports_title">அறிக்கைகள் பதிவேற்றப்படவில்லை</string>
+    <string name="empty_consultations_title">முந்தைய ஆலோசனைகள் இல்லை</string>
+
+    <!-- Phase 6.5: doctor profile -->
+    <string name="doctor_profile">என் தொழில்முறை சுயவிவரம்</string>
+    <string name="doctor_profile_subtitle">சந்திப்பை பதிவு செய்யும் முன் நோயாளிகள் இதைப் பார்க்கலாம். தொழில்முறை தகவல்கள் மட்டுமே காட்டப்படும்.</string>
+    <string name="doctor_profile_view">சுயவிவரத்தைப் பார்க்கவும்</string>
+    <string name="doctor_profile_photo">தொழில்முறை புகைப்படம்</string>
+    <string name="doctor_profile_choose_photo">புகைப்படத்தைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="doctor_profile_name">முழு பெயர்</string>
+    <string name="doctor_profile_specialty">மருத்துவ சிறப்பு</string>
+    <string name="doctor_profile_qualifications">தகுதிகள்</string>
+    <string name="doctor_profile_experience">அனுபவ ஆண்டுகள்</string>
+    <string name="doctor_profile_hospital">மருத்துவமனை / கிளினிக்</string>
+    <string name="doctor_profile_languages">பேசும் மொழிகள்</string>
+    <string name="doctor_profile_bio">சுருக்கமான தொழில்முறை அறிமுகம்</string>
+    <string name="doctor_profile_availability">ஆலோசனை கிடைக்கும் நேரம்</string>
+    <string name="doctor_profile_license">பதிவு / உரிம எண் (விருப்பத்தேர்வு)</string>
+    <string name="doctor_profile_save">சுயவிவரத்தைச் சேமிக்கவும்</string>
+    <string name="doctor_profile_saved">சுயவிவரம் சேமிக்கப்பட்டது</string>
+    <string name="doctor_profile_validation">குறைந்தபட்சம் உங்கள் பெயரும் சிறப்பும் நிரப்பவும்.</string>
+    <string name="doctor_profile_not_set">இந்த மருத்துவர் இன்னும் சுயவிவரத்தை முடிக்கவில்லை.</string>
+    <string name="close">மூடு</string>
 </resources>

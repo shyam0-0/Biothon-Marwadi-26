@@ -15,10 +15,14 @@ import com.medfusion.ai.domain.model.Medication
 import com.medfusion.ai.domain.model.ProgressAnalysis
 import com.medfusion.ai.domain.model.TimelineEvent
 import com.medfusion.ai.domain.model.TimelineEventType
+import com.medfusion.ai.domain.model.AppNotification
+import com.medfusion.ai.domain.model.NotificationKind
+import com.medfusion.ai.domain.model.UserRole
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import com.medfusion.ai.domain.repository.CareRepository
 import com.medfusion.ai.domain.repository.CaseRepository
 import com.medfusion.ai.domain.repository.ConsultationRepository
+import com.medfusion.ai.domain.repository.NotificationRepository
 import com.medfusion.ai.domain.repository.PassportRepository
 import com.medfusion.ai.domain.video.VideoProvider
 import com.medfusion.ai.navigation.Routes
@@ -78,6 +82,7 @@ class DoctorConsultationViewModel @Inject constructor(
     private val aiService: AiService,
     private val videoProvider: VideoProvider,
     private val passportRepository: PassportRepository,
+    private val notificationRepository: NotificationRepository,
 ) : ViewModel() {
 
     private val appointmentId: String = checkNotNull(savedStateHandle[Routes.Args.APPOINTMENT_ID]) {
@@ -220,6 +225,24 @@ class DoctorConsultationViewModel @Inject constructor(
             when (result) {
                 is Resource.Success -> {
                     recordOnPatientTimeline(appt.patientId, appt.doctorName, state.diagnosis)
+                    // Notification center (Phase 6.5): tell the patient their
+                    // prescription and care plan are ready.
+                    notificationRepository.post(
+                        AppNotification(
+                            audience = UserRole.PATIENT,
+                            kind = NotificationKind.PRESCRIPTION_READY,
+                            detail = appt.doctorName,
+                            route = Routes.prescription(appt.id),
+                        ),
+                    )
+                    notificationRepository.post(
+                        AppNotification(
+                            audience = UserRole.PATIENT,
+                            kind = NotificationKind.CARE_PLAN_READY,
+                            detail = state.diagnosis.trim(),
+                            route = Routes.CARE_PLAN,
+                        ),
+                    )
                     _uiState.update { it.copy(submitting = false, completed = true) }
                 }
                 is Resource.Error -> _uiState.update { it.copy(submitting = false, error = result.error) }

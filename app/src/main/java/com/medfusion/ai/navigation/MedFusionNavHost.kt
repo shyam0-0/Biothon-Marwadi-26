@@ -22,7 +22,9 @@ import com.medfusion.ai.ui.consultation.PrescriptionScreen
 import com.medfusion.ai.ui.doctor.DoctorPatientProfileScreen
 import com.medfusion.ai.ui.doctor.DoctorPatientsScreen
 import com.medfusion.ai.ui.doctor.DoctorScheduleScreen
+import com.medfusion.ai.ui.doctor.DoctorProfileScreen
 import com.medfusion.ai.ui.landing.RoleSelectionScreen
+import com.medfusion.ai.ui.notifications.NotificationCenterScreen
 import com.medfusion.ai.ui.passport.PatientPassportScreen
 import com.medfusion.ai.ui.result.ResultScreen
 import com.medfusion.ai.ui.settings.SettingsScreen
@@ -113,6 +115,7 @@ fun MedFusionNavHost(
                 onOpenVitals = { navController.navigate(Routes.VITALS_MONITOR) },
                 onOpenPassport = { navController.navigate(Routes.PATIENT_PASSPORT) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
                 onLoggedOut = { navController.returnToRoleSelection() },
             )
         }
@@ -135,6 +138,8 @@ fun MedFusionNavHost(
                 onOpenPatients = { navController.navigate(Routes.DOCTOR_PATIENTS) },
                 onOpenSchedule = { navController.navigate(Routes.DOCTOR_SCHEDULE) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                onOpenProfile = { navController.navigate(Routes.DOCTOR_PROFILE) },
             )
         }
 
@@ -167,6 +172,18 @@ fun MedFusionNavHost(
 
         composable(Routes.SETTINGS) {
             SettingsScreen(onBack = { navController.popBackStack() })
+        }
+
+        // --- Platform polish (Phase 6.5) ---------------------------------------
+        composable(Routes.NOTIFICATIONS) {
+            NotificationCenterScreen(
+                onOpenRoute = { route -> navController.navigate(route) { launchSingleTop = true } },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(Routes.DOCTOR_PROFILE) {
+            DoctorProfileScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.PATIENT_APPOINTMENTS) {

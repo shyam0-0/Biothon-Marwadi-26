@@ -35,4 +35,79 @@
     <string name="language_hindi">हिन्दी (Hindi)</string>
     <string name="language_tamil">தமிழ் (Tamil)</string>
     <string name="language_description">ऐप और AI उत्तरों के लिए भाषा चुनें।</string>
+
+    <string name="generic_error_title">कुछ गड़बड़ हो गई</string>
+
+    <!-- Phase 6.5: connectivity -->
+    <string name="offline_banner">इंटरनेट कनेक्शन नहीं — ऑनलाइन सुविधाएँ रुकी हुई हैं</string>
+    <string name="offline_title">आप ऑफ़लाइन हैं</string>
+    <string name="offline_reconnect">जारी रखने के लिए फिर से कनेक्ट करें</string>
+
+    <!-- Phase 6.5: notification center -->
+    <string name="notifications">सूचनाएँ</string>
+    <string name="notifications_mark_all_read">सभी पढ़ी हुई चिह्नित करें</string>
+    <string name="notifications_clear">सभी हटाएँ</string>
+    <string name="notifications_empty_title">कोई सूचना नहीं</string>
+    <string name="notifications_empty_subtitle">अपॉइंटमेंट, नुस्खों और देखभाल योजनाओं के अपडेट यहाँ दिखेंगे।</string>
+    <string name="notif_appointment_booked">अपॉइंटमेंट बुक हो गया</string>
+    <string name="notif_appointment_accepted">डॉक्टर ने आपका अपॉइंटमेंट स्वीकार किया</string>
+    <string name="notif_appointment_rescheduled">अपॉइंटमेंट पुनर्निर्धारित हुआ</string>
+    <string name="notif_appointment_cancelled">अपॉइंटमेंट रद्द हुआ</string>
+    <string name="notif_consultation_soon">परामर्श लगभग 15 मिनट में शुरू होगा</string>
+    <string name="notif_doctor_joined">आपके डॉक्टर परामर्श में शामिल हो गए हैं</string>
+    <string name="notif_prescription_ready">नया नुस्खा उपलब्ध है</string>
+    <string name="notif_care_plan_ready">नई देखभाल योजना तैयार है</string>
+    <string name="notif_checkin_reminder">दैनिक चेक-इन अनुस्मारक</string>
+    <string name="notif_follow_up_reminder">फ़ॉलो-अप अपॉइंटमेंट अनुस्मारक</string>
+    <string name="notif_recovery_update">रिकवरी अपडेट उपलब्ध है</string>
+    <string name="notif_device_lost">डिवाइस कनेक्शन टूट गया</string>
+    <string name="notif_emergency">AI से आपातकालीन सिफ़ारिश</string>
+    <string name="notif_new_request">नया अपॉइंटमेंट अनुरोध</string>
+    <string name="notif_report_uploaded">रोगी ने रिपोर्ट अपलोड की</string>
+    <string name="notif_analysis_completed">रोगी ने AI लक्षण विश्लेषण पूरा किया</string>
+    <string name="notif_consultation_reminder">आगामी परामर्श अनुस्मारक</string>
+    <string name="notif_follow_up_booked">फ़ॉलो-अप अपॉइंटमेंट बुक हुआ</string>
+
+    <!-- Phase 6.5: contextual loading -->
+    <string name="loading_analyzing">लक्षणों का विश्लेषण हो रहा है…</string>
+    <string name="loading_history">पिछला चिकित्सा इतिहास देखा जा रहा है…</string>
+    <string name="loading_appointment">अपॉइंटमेंट तैयार हो रहा है…</string>
+    <string name="loading_explanation">AI व्याख्या बनाई जा रही है…</string>
+    <string name="loading_passport">रोगी पासपोर्ट लोड हो रहा है…</string>
+    <string name="loading_consultation">परामर्श से जुड़ रहे हैं…</string>
+    <string name="loading_upload">रिपोर्ट अपलोड हो रही है…</string>
+    <string name="loading_checkin">दैनिक चेक-इन सहेजा जा रहा है…</string>
+    <string name="loading_care_plan">देखभाल योजना समन्वित हो रही है…</string>
+    <string name="loading_doctors">उपलब्ध डॉक्टर खोजे जा रहे हैं…</string>
+    <string name="loading_prescription">आपका नुस्खा लोड हो रहा है…</string>
+    <string name="loading_profile">प्रोफ़ाइल लोड हो रही है…</string>
+
+    <!-- Phase 6.5: empty states -->
+    <string name="empty_appointments_title">अभी कोई अपॉइंटमेंट नहीं</string>
+    <string name="empty_appointments_subtitle">विश्लेषण के बाद अपॉइंटमेंट बुक करें, वह यहाँ दिखेगा।</string>
+    <string name="empty_care_plan_title">कोई देखभाल योजना उपलब्ध नहीं</string>
+    <string name="empty_care_plan_subtitle">परामर्श पूरा होने के बाद आपके लिए देखभाल योजना बनाई जाती है।</string>
+    <string name="empty_reports_title">कोई रिपोर्ट अपलोड नहीं हुई</string>
+    <string name="empty_consultations_title">कोई पिछला परामर्श नहीं</string>
+
+    <!-- Phase 6.5: doctor profile -->
+    <string name="doctor_profile">मेरी व्यावसायिक प्रोफ़ाइल</string>
+    <string name="doctor_profile_subtitle">रोगी अपॉइंटमेंट बुक करने से पहले इसे देख सकते हैं। केवल व्यावसायिक जानकारी दिखाई जाती है।</string>
+    <string name="doctor_profile_view">प्रोफ़ाइल देखें</string>
+    <string name="doctor_profile_photo">व्यावसायिक फ़ोटो</string>
+    <string name="doctor_profile_choose_photo">फ़ोटो चुनें</string>
+    <string name="doctor_profile_name">पूरा नाम</string>
+    <string name="doctor_profile_specialty">चिकित्सा विशेषज्ञता</string>
+    <string name="doctor_profile_qualifications">योग्यताएँ</string>
+    <string name="doctor_profile_experience">अनुभव के वर्ष</string>
+    <string name="doctor_profile_hospital">अस्पताल / क्लिनिक</string>
+    <string name="doctor_profile_languages">बोली जाने वाली भाषाएँ</string>
+    <string name="doctor_profile_bio">संक्षिप्त व्यावसायिक परिचय</string>
+    <string name="doctor_profile_availability">परामर्श उपलब्धता</string>
+    <string name="doctor_profile_license">पंजीकरण / लाइसेंस नंबर (वैकल्पिक)</string>
+    <string name="doctor_profile_save">प्रोफ़ाइल सहेजें</string>
+    <string name="doctor_profile_saved">प्रोफ़ाइल सहेजी गई</string>
+    <string name="doctor_profile_validation">कृपया कम से कम अपना नाम और विशेषज्ञता भरें।</string>
+    <string name="doctor_profile_not_set">इस डॉक्टर ने अभी प्रोफ़ाइल पूरी नहीं की है।</string>
+    <string name="close">बंद करें</string>
 </resources>

@@ -43,6 +43,10 @@ object Routes {
     // Settings (Phase 12)
     const val SETTINGS = "settings"
 
+    // Platform polish (Phase 6.5)
+    const val NOTIFICATIONS = "notifications"
+    const val DOCTOR_PROFILE = "doctor_profile"
+
     /** Argument keys, kept beside the routes that use them. */
     object Args {
         const val ROLE = "role"

@@ -68,6 +68,7 @@ fun DoctorConsultationScreen(
         StateContainer(
             state = state.appointment,
             modifier = Modifier.padding(padding),
+            loadingMessage = androidx.compose.ui.res.stringResource(com.medfusion.ai.R.string.loading_consultation),
             onRetry = viewModel::load,
         ) { appointment ->
             ConsultationBody(

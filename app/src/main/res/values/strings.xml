@@ -24,6 +24,7 @@
     <string name="continue_action">Continue</string>
     <string name="loading">Please wait…</string>
     <string name="generic_error">Something went wrong. Please try again.</string>
+    <string name="generic_error_title">Something went wrong</string>
     <string name="no_connection">No internet connection.</string>
 
     <!-- Disclaimer used across AI screens -->
@@ -36,4 +37,77 @@
     <string name="language_hindi">हिन्दी (Hindi)</string>
     <string name="language_tamil">தமிழ் (Tamil)</string>
     <string name="language_description">Choose the language for the app and AI responses.</string>
+
+    <!-- Phase 6.5: connectivity -->
+    <string name="offline_banner">No internet connection — online features are paused</string>
+    <string name="offline_title">You\'re offline</string>
+    <string name="offline_reconnect">Reconnect to continue</string>
+
+    <!-- Phase 6.5: notification center -->
+    <string name="notifications">Notifications</string>
+    <string name="notifications_mark_all_read">Mark all read</string>
+    <string name="notifications_clear">Clear all</string>
+    <string name="notifications_empty_title">No notifications</string>
+    <string name="notifications_empty_subtitle">Updates about appointments, prescriptions and care plans will appear here.</string>
+    <string name="notif_appointment_booked">Appointment booked</string>
+    <string name="notif_appointment_accepted">Doctor accepted your appointment</string>
+    <string name="notif_appointment_rescheduled">Appointment rescheduled</string>
+    <string name="notif_appointment_cancelled">Appointment cancelled</string>
+    <string name="notif_consultation_soon">Consultation starts in about 15 minutes</string>
+    <string name="notif_doctor_joined">Your doctor has joined the consultation</string>
+    <string name="notif_prescription_ready">New prescription available</string>
+    <string name="notif_care_plan_ready">New care plan generated</string>
+    <string name="notif_checkin_reminder">Daily check-in reminder</string>
+    <string name="notif_follow_up_reminder">Follow-up appointment reminder</string>
+    <string name="notif_recovery_update">Recovery update available</string>
+    <string name="notif_device_lost">Device connection lost</string>
+    <string name="notif_emergency">Emergency recommendation from AI</string>
+    <string name="notif_new_request">New appointment request</string>
+    <string name="notif_report_uploaded">Patient uploaded a report</string>
+    <string name="notif_analysis_completed">Patient completed AI symptom analysis</string>
+    <string name="notif_consultation_reminder">Upcoming consultation reminder</string>
+    <string name="notif_follow_up_booked">Follow-up appointment booked</string>
+
+    <!-- Phase 6.5: contextual loading -->
+    <string name="loading_analyzing">Analyzing symptoms…</string>
+    <string name="loading_history">Reviewing previous medical history…</string>
+    <string name="loading_appointment">Preparing appointment…</string>
+    <string name="loading_explanation">Generating AI explanation…</string>
+    <string name="loading_passport">Loading patient passport…</string>
+    <string name="loading_consultation">Connecting to consultation…</string>
+    <string name="loading_upload">Uploading report…</string>
+    <string name="loading_checkin">Saving daily check-in…</string>
+    <string name="loading_care_plan">Synchronizing care plan…</string>
+    <string name="loading_doctors">Finding available doctors…</string>
+    <string name="loading_prescription">Loading your prescription…</string>
+    <string name="loading_profile">Loading profile…</string>
+
+    <!-- Phase 6.5: empty states -->
+    <string name="empty_appointments_title">No appointments yet</string>
+    <string name="empty_appointments_subtitle">Book an appointment after your analysis to see it here.</string>
+    <string name="empty_care_plan_title">No care plan available</string>
+    <string name="empty_care_plan_subtitle">A care plan is created for you after a consultation is completed.</string>
+    <string name="empty_reports_title">No reports uploaded</string>
+    <string name="empty_consultations_title">No previous consultations</string>
+
+    <!-- Phase 6.5: doctor profile -->
+    <string name="doctor_profile">My Professional Profile</string>
+    <string name="doctor_profile_subtitle">Patients can view this before booking an appointment. Only professional information is shown.</string>
+    <string name="doctor_profile_view">View profile</string>
+    <string name="doctor_profile_photo">Professional photo</string>
+    <string name="doctor_profile_choose_photo">Choose photo</string>
+    <string name="doctor_profile_name">Full name</string>
+    <string name="doctor_profile_specialty">Medical specialty</string>
+    <string name="doctor_profile_qualifications">Qualifications</string>
+    <string name="doctor_profile_experience">Years of experience</string>
+    <string name="doctor_profile_hospital">Hospital / clinic</string>
+    <string name="doctor_profile_languages">Languages spoken</string>
+    <string name="doctor_profile_bio">Short professional biography</string>
+    <string name="doctor_profile_availability">Consultation availability</string>
+    <string name="doctor_profile_license">Registration / license number (optional)</string>
+    <string name="doctor_profile_save">Save profile</string>
+    <string name="doctor_profile_saved">Profile saved</string>
+    <string name="doctor_profile_validation">Please fill in at least your name and specialty.</string>
+    <string name="doctor_profile_not_set">This doctor hasn\'t completed their profile yet.</string>
+    <string name="close">Close</string>
 </resources>

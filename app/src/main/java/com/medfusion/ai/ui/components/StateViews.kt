@@ -19,8 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.medfusion.ai.R
 import com.medfusion.ai.core.util.AppError
 import com.medfusion.ai.core.util.UiState
 import com.medfusion.ai.ui.theme.Spacing
@@ -100,11 +102,19 @@ fun ErrorView(
     val icon = if (error is AppError.Network) Icons.Outlined.CloudOff else Icons.Outlined.ErrorOutline
     MessageState(
         icon = icon,
-        title = if (error is AppError.Network) "You're offline" else "Something went wrong",
+        title = stringResource(
+            if (error is AppError.Network) R.string.offline_title else R.string.generic_error_title,
+        ),
         subtitle = error.userMessage,
         modifier = modifier,
         action = if (onRetry != null && error.isRetryable) {
-            { SecondaryButton(text = "Retry", onClick = onRetry, modifier = Modifier.fillMaxWidth(0.6f)) }
+            {
+                SecondaryButton(
+                    text = stringResource(R.string.retry),
+                    onClick = onRetry,
+                    modifier = Modifier.fillMaxWidth(0.6f),
+                )
+            }
         } else null,
     )
 }

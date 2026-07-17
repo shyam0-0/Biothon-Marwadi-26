@@ -3,11 +3,16 @@ package com.medfusion.ai.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.medfusion.ai.core.util.Resource
+import com.medfusion.ai.domain.model.AppNotification
 import com.medfusion.ai.domain.model.Appointment
 import com.medfusion.ai.domain.model.AppointmentStatus
+import com.medfusion.ai.domain.model.NotificationKind
+import com.medfusion.ai.domain.model.UserRole
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CareRepository
+import com.medfusion.ai.domain.repository.NotificationRepository
+import com.medfusion.ai.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +38,7 @@ class PatientDashboardViewModel @Inject constructor(
     authRepository: AuthRepository,
     appointmentRepository: AppointmentRepository,
     careRepository: CareRepository,
+    notificationRepository: NotificationRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PatientHomeState())
@@ -62,8 +68,18 @@ class PatientDashboardViewModel @Inject constructor(
                     ?: return@launch
                 val latestLog = (careRepository.getRecentLogs(pid, limit = 1) as? Resource.Success)
                     ?.data?.firstOrNull()
-                _state.update {
-                    it.copy(hasCarePlan = true, checkInDueToday = latestLog?.date != today)
+                val dueToday = latestLog?.date != today
+                _state.update { it.copy(hasCarePlan = true, checkInDueToday = dueToday) }
+                // Notification center (Phase 6.5): one check-in reminder per day.
+                if (dueToday) {
+                    notificationRepository.post(
+                        AppNotification(
+                            audience = UserRole.PATIENT,
+                            kind = NotificationKind.CHECK_IN_REMINDER,
+                            route = Routes.CARE_PLAN,
+                            dedupeKey = "check-in-$today",
+                        ),
+                    )
                 }
             }
         }

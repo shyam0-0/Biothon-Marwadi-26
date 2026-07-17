@@ -3,6 +3,7 @@ package com.medfusion.ai.ui.appointment
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -36,12 +37,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.compose.runtime.LaunchedEffect
+import com.medfusion.ai.R
 import com.medfusion.ai.core.util.UiState
 import com.medfusion.ai.domain.model.AvailabilitySlot
 import com.medfusion.ai.domain.model.Doctor
@@ -77,12 +80,22 @@ fun BookAppointmentScreen(
         viewModel.bookedEvents.flowWithLifecycle(lifecycleOwner.lifecycle).collectLatest { onBooked() }
     }
 
+    // Doctor profile preview before booking (Phase 6.5).
+    var profileDoctor by remember { mutableStateOf<Doctor?>(null) }
+    profileDoctor?.let { doctor ->
+        com.medfusion.ai.ui.doctor.DoctorProfileDialog(
+            doctor = doctor,
+            onDismiss = { profileDoctor = null },
+        )
+    }
+
     MedFusionScaffold(title = "Book Appointment", onBack = onBack) { padding ->
         if (uiState.selectedDoctor == null) {
             DoctorSelection(
                 specialty = uiState.specialty,
                 doctors = uiState.doctors,
                 onSelect = viewModel::selectDoctor,
+                onViewProfile = { profileDoctor = it },
                 modifier = modifier.padding(padding),
             )
         } else {
@@ -105,6 +118,7 @@ private fun DoctorSelection(
     specialty: String,
     doctors: UiState<List<Doctor>>,
     onSelect: (Doctor) -> Unit,
+    onViewProfile: (Doctor) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -122,18 +136,24 @@ private fun DoctorSelection(
         )
         when (doctors) {
             is UiState.Loading, is UiState.Idle ->
-                Box(Modifier.fillMaxWidth().height(160.dp)) { LoadingView() }
+                Box(Modifier.fillMaxWidth().height(160.dp)) {
+                    LoadingView(message = stringResource(R.string.loading_doctors))
+                }
             is UiState.Empty ->
                 EmptyView(title = "No doctors available", subtitle = "Please try again later.")
             is UiState.Error -> ErrorView(error = doctors.error)
-            is UiState.Success -> doctors.data.forEach { DoctorCard(it, onSelect) }
+            is UiState.Success -> doctors.data.forEach { DoctorCard(it, onSelect, onViewProfile) }
         }
         Spacer(Modifier.height(16.dp))
     }
 }
 
 @Composable
-private fun DoctorCard(doctor: Doctor, onSelect: (Doctor) -> Unit) {
+private fun DoctorCard(
+    doctor: Doctor,
+    onSelect: (Doctor) -> Unit,
+    onViewProfile: (Doctor) -> Unit,
+) {
     MedFusionCard(modifier = Modifier.clickable { onSelect(doctor) }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -155,6 +175,10 @@ private fun DoctorCard(doctor: Doctor, onSelect: (Doctor) -> Unit) {
                         Text("${doctor.rating}", style = MaterialTheme.typography.labelMedium)
                     }
                 }
+                TextButton(
+                    onClick = { onViewProfile(doctor) },
+                    contentPadding = PaddingValues(0.dp),
+                ) { Text(stringResource(R.string.doctor_profile_view)) }
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Select",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -262,7 +286,9 @@ private fun SlotSection(
 ) {
     when (availability) {
         is UiState.Idle, is UiState.Loading ->
-            Box(Modifier.fillMaxWidth().height(80.dp)) { LoadingView() }
+            Box(Modifier.fillMaxWidth().height(80.dp)) {
+                LoadingView(message = stringResource(R.string.loading_appointment))
+            }
         is UiState.Empty ->
             EmptyView(title = "No slots available", subtitle = "Please try a different date.",
                 modifier = Modifier.height(140.dp))
