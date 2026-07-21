@@ -1,5 +1,6 @@
 package com.medfusion.ai.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.medfusion.ai.core.util.Resource
@@ -11,6 +12,7 @@ import com.medfusion.ai.domain.model.UserRole
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CareRepository
+import com.medfusion.ai.domain.repository.LiveVitalsRepository
 import com.medfusion.ai.domain.repository.NotificationRepository
 import com.medfusion.ai.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +33,8 @@ data class PatientHomeState(
     val nextAppointment: Appointment? = null,
     val hasCarePlan: Boolean = false,
     val checkInDueToday: Boolean = false,
+    /** Live IoT vitals (Phase 7.4) — Loading until Firestore's first snapshot. */
+    val liveVitals: LiveVitalsCardState = LiveVitalsCardState.Loading,
 )
 
 @HiltViewModel
@@ -39,6 +43,7 @@ class PatientDashboardViewModel @Inject constructor(
     appointmentRepository: AppointmentRepository,
     careRepository: CareRepository,
     notificationRepository: NotificationRepository,
+    liveVitalsRepository: LiveVitalsRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PatientHomeState())
@@ -48,6 +53,19 @@ class PatientDashboardViewModel @Inject constructor(
         val pid = authRepository.currentUserId()
         if (pid != null) {
             val today = LocalDate.now().toString()
+
+            // Live vitals (Phase 7.4): independent of the sections below, so a
+            // Firestore hiccup on one never blocks the other from updating.
+            // Phase 7.5 temporary diagnostic: pid here MUST match the patientId
+            // the vitals source (ESP32/backend) uploads under, or this observes
+            // an empty/nonexistent document forever.
+            Log.d("LiveVitals", "[ViewModel] PatientDashboardViewModel observing patientId=$pid")
+            viewModelScope.launch {
+                liveVitalsRepository.observeVitalsCardState(pid).collect { cardState ->
+                    Log.d("LiveVitals", "[ViewModel] PatientDashboardViewModel updating state with $cardState")
+                    _state.update { it.copy(liveVitals = cardState) }
+                }
+            }
 
             viewModelScope.launch {
                 appointmentRepository.observePatientAppointments(pid).collect { appointments ->

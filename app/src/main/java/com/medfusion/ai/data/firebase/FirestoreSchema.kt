@@ -183,4 +183,22 @@ object FirestoreSchema {
         const val LONGITUDE = "longitude"
         const val CREATED_AT = "createdAt"
     }
+
+    /**
+     * Phase 7.3/7.4: written by the FastAPI backend (ESP32 -> backend ->
+     * Firestore), never by the Android app — this is read-only from here.
+     * A separate top-level collection from [Users]/[Passports] by design,
+     * matching the backend's existing schema exactly.
+     */
+    object LatestVitals {
+        const val PATIENTS_COLLECTION = "patients"
+        const val SUBCOLLECTION = "latestVitals"
+        const val DOCUMENT_ID = "current"
+        const val DEVICE_ID = "deviceId"
+        const val HEART_RATE = "heartRate"
+        const val SPO2 = "spo2"
+        const val TIMESTAMP = "timestamp"
+        const val CREATED_AT = "createdAt"
+        const val SOURCE = "source"
+    }
 }

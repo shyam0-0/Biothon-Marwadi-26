@@ -1,5 +1,6 @@
 package com.medfusion.ai.di
 
+import android.util.Log
 import com.medfusion.ai.BuildConfig
 import com.medfusion.ai.data.demo.FakeAppointmentRepository
 import com.medfusion.ai.data.demo.FakeAuthRepository
@@ -8,6 +9,7 @@ import com.medfusion.ai.data.demo.FakeCaseRepository
 import com.medfusion.ai.data.demo.FakeConsultationRepository
 import com.medfusion.ai.data.demo.FakeDoctorProfileRepository
 import com.medfusion.ai.data.demo.FakeEmergencyRepository
+import com.medfusion.ai.data.demo.FakeLiveVitalsRepository
 import com.medfusion.ai.data.demo.FakePassportRepository
 import com.medfusion.ai.data.demo.FakeReportRepository
 import com.medfusion.ai.data.demo.FakeStorageRepository
@@ -19,6 +21,7 @@ import com.medfusion.ai.data.repository.CaseRepositoryImpl
 import com.medfusion.ai.data.repository.ConsultationRepositoryImpl
 import com.medfusion.ai.data.repository.DoctorProfileRepositoryImpl
 import com.medfusion.ai.data.repository.EmergencyRepositoryImpl
+import com.medfusion.ai.data.repository.LiveVitalsRepositoryImpl
 import com.medfusion.ai.data.repository.PassportRepositoryImpl
 import com.medfusion.ai.data.repository.StorageRepositoryImpl
 import com.medfusion.ai.domain.repository.AppointmentRepository
@@ -28,6 +31,7 @@ import com.medfusion.ai.domain.repository.CaseRepository
 import com.medfusion.ai.domain.repository.ConsultationRepository
 import com.medfusion.ai.domain.repository.DoctorProfileRepository
 import com.medfusion.ai.domain.repository.EmergencyRepository
+import com.medfusion.ai.domain.repository.LiveVitalsRepository
 import com.medfusion.ai.domain.repository.PassportRepository
 import com.medfusion.ai.domain.repository.ReportRepository
 import com.medfusion.ai.domain.repository.StorageRepository
@@ -107,4 +111,16 @@ object RepositoryModule {
         real: Provider<DoctorProfileRepositoryImpl>,
         fake: Provider<FakeDoctorProfileRepository>,
     ): DoctorProfileRepository = if (BuildConfig.DEMO_MODE) fake.get() else real.get()
+
+    @Provides @Singleton
+    fun provideLiveVitalsRepository(
+        real: Provider<LiveVitalsRepositoryImpl>,
+        fake: Provider<FakeLiveVitalsRepository>,
+    ): LiveVitalsRepository {
+        // Phase 7.5 temporary diagnostic: confirms which implementation is
+        // actually wired up — fires once, when Hilt first resolves this binding.
+        Log.d("LiveVitals", "[DI] BuildConfig.DEMO_MODE=${BuildConfig.DEMO_MODE} -> " +
+            if (BuildConfig.DEMO_MODE) "using FakeLiveVitalsRepository" else "using LiveVitalsRepositoryImpl (Firestore)")
+        return if (BuildConfig.DEMO_MODE) fake.get() else real.get()
+    }
 }

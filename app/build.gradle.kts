@@ -58,7 +58,7 @@ android {
 
             // Run with in-memory fakes — no Firebase/backend required. Set to
             // false once you've added a real google-services.json to go live.
-            buildConfigField("boolean", "DEMO_MODE", "true")
+            buildConfigField("boolean", "DEMO_MODE", "false")
         }
 
         release {

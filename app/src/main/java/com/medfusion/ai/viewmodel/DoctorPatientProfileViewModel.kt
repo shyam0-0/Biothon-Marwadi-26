@@ -1,5 +1,6 @@
 package com.medfusion.ai.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,7 @@ import com.medfusion.ai.domain.model.TimelineEvent
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CareRepository
+import com.medfusion.ai.domain.repository.LiveVitalsRepository
 import com.medfusion.ai.domain.repository.PassportRepository
 import com.medfusion.ai.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,6 +44,8 @@ data class DoctorPatientProfileState(
     val progress: ProgressAnalysis? = null,
     /** Completed consultations with this doctor (diagnosis on record). */
     val consultations: List<Appointment> = emptyList(),
+    /** Live IoT vitals (Phase 7.4) — Loading until Firestore's first snapshot. */
+    val liveVitals: LiveVitalsCardState = LiveVitalsCardState.Loading,
 )
 
 /**
@@ -56,6 +60,7 @@ class DoctorPatientProfileViewModel @Inject constructor(
     private val careRepository: CareRepository,
     private val appointmentRepository: AppointmentRepository,
     private val aiService: AiService,
+    liveVitalsRepository: LiveVitalsRepository,
 ) : ViewModel() {
 
     private val patientId: String = checkNotNull(savedStateHandle[Routes.Args.PATIENT_ID]) {
@@ -69,6 +74,19 @@ class DoctorPatientProfileViewModel @Inject constructor(
 
     init {
         load()
+        // Live vitals (Phase 7.4): independent of load()/retry — a snapshot
+        // listener recovers on its own, so it isn't gated behind the passport
+        // load succeeding.
+        // Phase 7.5 temporary diagnostic: patientId here comes from navigation
+        // args (Routes.Args.PATIENT_ID) — must match the patientId the vitals
+        // source uploads under.
+        Log.d("LiveVitals", "[ViewModel] DoctorPatientProfileViewModel observing patientId=$patientId")
+        viewModelScope.launch {
+            liveVitalsRepository.observeVitalsCardState(patientId).collect { cardState ->
+                Log.d("LiveVitals", "[ViewModel] DoctorPatientProfileViewModel updating state with $cardState")
+                _uiState.update { it.copy(liveVitals = cardState) }
+            }
+        }
     }
 
     fun load() {

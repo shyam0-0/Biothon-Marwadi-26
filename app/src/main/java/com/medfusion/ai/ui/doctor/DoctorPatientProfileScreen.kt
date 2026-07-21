@@ -1,5 +1,6 @@
 package com.medfusion.ai.ui.doctor
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medfusion.ai.domain.model.PatientPassport
 import com.medfusion.ai.ui.components.ErrorView
+import com.medfusion.ai.ui.components.LiveVitalsCard
 import com.medfusion.ai.ui.components.LoadingView
 import com.medfusion.ai.ui.components.MedFusionCard
 import com.medfusion.ai.ui.components.MedFusionScaffold
@@ -56,6 +59,12 @@ fun DoctorPatientProfileScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Phase 7.5 temporary diagnostic: confirms the UI actually recomposes
+    // when the ViewModel's liveVitals state changes.
+    LaunchedEffect(state.liveVitals) {
+        Log.d("LiveVitals", "[UI] DoctorPatientProfileScreen received state: ${state.liveVitals}")
+    }
+
     MedFusionScaffold(title = state.patientName.ifBlank { "Patient" }, onBack = onBack) { padding ->
         when {
             state.loading -> LoadingView(
@@ -74,6 +83,8 @@ fun DoctorPatientProfileScreen(
                     .padding(horizontal = Sizes.screenPadding, vertical = Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
+                LiveVitalsCard(state = state.liveVitals, emptyMessage = "No vitals received yet.")
+
                 state.passport?.let { PassportSummary(it) }
 
                 state.progress?.let { progress ->

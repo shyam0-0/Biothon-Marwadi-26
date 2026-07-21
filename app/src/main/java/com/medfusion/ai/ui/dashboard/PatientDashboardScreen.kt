@@ -1,5 +1,6 @@
 package com.medfusion.ai.ui.dashboard
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -22,11 +23,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medfusion.ai.ui.components.ActionCard
+import com.medfusion.ai.ui.components.LiveVitalsCard
 import com.medfusion.ai.ui.components.MedFusionScaffold
 import com.medfusion.ai.ui.notifications.NotificationBell
 import com.medfusion.ai.ui.theme.Sizes
@@ -55,6 +58,12 @@ fun PatientDashboardScreen(
     val user by viewModel.currentUser.collectAsStateWithLifecycle()
     val home by homeViewModel.state.collectAsStateWithLifecycle()
     val firstName = user?.fullName?.trim()?.substringBefore(' ')?.takeIf { it.isNotBlank() }
+
+    // Phase 7.5 temporary diagnostic: confirms the UI actually recomposes
+    // when the ViewModel's liveVitals state changes.
+    LaunchedEffect(home.liveVitals) {
+        Log.d("LiveVitals", "[UI] PatientDashboardScreen received state: ${home.liveVitals}")
+    }
 
     MedFusionScaffold(
         title = "MedFusion",
@@ -86,6 +95,8 @@ fun PatientDashboardScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(Spacing.sm))
+
+            LiveVitalsCard(state = home.liveVitals, emptyMessage = "Waiting for sensor...")
 
             home.nextAppointment?.let { appt ->
                 ActionCard(
