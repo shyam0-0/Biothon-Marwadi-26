@@ -61,6 +61,16 @@ object FirestoreSchema {
         const val YEARS_EXPERIENCE = "yearsExperience"
         const val RATING = "rating"
         const val QUALIFICATION = "qualification"
+
+        // Phase 7.1: the doctor's own editable professional profile (Phase 6.5
+        // UI) is merged into the same directory document, keyed by doctorId, so
+        // it stays in sync with what patients see in the booking search.
+        const val PHOTO_URL = "photoUrl"
+        const val HOSPITAL = "hospital"
+        const val LANGUAGES_SPOKEN = "languagesSpoken"
+        const val BIOGRAPHY = "biography"
+        const val AVAILABILITY_TEXT = "availabilityText"
+        const val LICENSE_NUMBER = "licenseNumber"
     }
 
     object Prescriptions {

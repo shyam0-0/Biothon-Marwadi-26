@@ -1,72 +1,93 @@
 package com.medfusion.ai.data.repository
 
-import android.content.Context
-import android.content.SharedPreferences
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.medfusion.ai.core.util.Resource
+import com.medfusion.ai.core.util.resourceOf
+import com.medfusion.ai.data.firebase.FirestoreSchema.Doctors
+import com.medfusion.ai.di.IoDispatcher
 import com.medfusion.ai.domain.model.DoctorProfile
 import com.medfusion.ai.domain.repository.DoctorProfileRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * SharedPreferences-backed doctor profile store. Deliberately dependency-free
- * (no Room / DataStore) per Phase 6.5's "no unnecessary dependencies" rule; a
- * Firestore-backed implementation can replace this behind the same interface
- * when backend integration begins. Works identically in Demo Mode.
+ * Firestore-backed doctor professional profile (Phase 7.1). Reuses the same
+ * "doctors" directory collection that the booking flow already reads
+ * ([AppointmentRepositoryImpl.getDoctorsBySpecialty]), keyed by doctorId (the
+ * doctor's auth uid), so a profile save also keeps the patient-facing booking
+ * directory current — one document, one source of truth.
  */
 @Singleton
 class DoctorProfileRepositoryImpl @Inject constructor(
-    @ApplicationContext context: Context,
+    private val firestore: FirebaseFirestore,
+    @IoDispatcher private val io: CoroutineDispatcher,
 ) : DoctorProfileRepository {
 
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences("doctor_profiles", Context.MODE_PRIVATE)
+    private fun doc(doctorId: String) =
+        firestore.collection(Doctors.COLLECTION).document(doctorId)
 
-    /** Bumped on every save so observers re-read the prefs. */
-    private val version = MutableStateFlow(0)
-
-    override fun observeProfile(doctorId: String): Flow<DoctorProfile?> =
-        version.map { read(doctorId) }
+    override fun observeProfile(doctorId: String): Flow<DoctorProfile?> = callbackFlow {
+        val registration = doc(doctorId).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                // Surface "no profile" rather than crashing the collector.
+                trySend(null)
+                return@addSnapshotListener
+            }
+            trySend(snapshot?.toDoctorProfile(doctorId))
+        }
+        awaitClose { registration.remove() }
+    }
 
     override suspend fun getProfile(doctorId: String): Resource<DoctorProfile?> =
-        Resource.Success(read(doctorId))
+        withContext(io) {
+            resourceOf { doc(doctorId).get().await().toDoctorProfile(doctorId) }
+        }
 
-    override suspend fun saveProfile(profile: DoctorProfile): Resource<Unit> {
-        val id = profile.doctorId
-        prefs.edit()
-            .putString("$id.fullName", profile.fullName)
-            .putString("$id.photoUri", profile.photoUri)
-            .putString("$id.specialty", profile.specialty)
-            .putString("$id.qualifications", profile.qualifications)
-            .putInt("$id.yearsExperience", profile.yearsExperience)
-            .putString("$id.hospital", profile.hospital)
-            .putString("$id.languagesSpoken", profile.languagesSpoken)
-            .putString("$id.biography", profile.biography)
-            .putString("$id.availability", profile.availability)
-            .putString("$id.licenseNumber", profile.licenseNumber)
-            .apply()
-        version.value++
-        return Resource.Success(Unit)
-    }
+    override suspend fun saveProfile(profile: DoctorProfile): Resource<Unit> =
+        withContext(io) {
+            resourceOf {
+                val data = mapOf(
+                    Doctors.NAME to profile.fullName,
+                    Doctors.SPECIALTY to profile.specialty,
+                    Doctors.YEARS_EXPERIENCE to profile.yearsExperience,
+                    Doctors.QUALIFICATION to profile.qualifications,
+                    Doctors.PHOTO_URL to profile.photoUri,
+                    Doctors.HOSPITAL to profile.hospital,
+                    Doctors.LANGUAGES_SPOKEN to profile.languagesSpoken,
+                    Doctors.BIOGRAPHY to profile.biography,
+                    Doctors.AVAILABILITY_TEXT to profile.availability,
+                    Doctors.LICENSE_NUMBER to profile.licenseNumber,
+                )
+                // Merge: preserves fields this profile doesn't own (e.g. RATING) and
+                // any directory doc that already existed for the booking list.
+                doc(profile.doctorId).set(data, SetOptions.merge()).await()
+                Unit
+            }
+        }
+}
 
-    private fun read(doctorId: String): DoctorProfile? {
-        val name = prefs.getString("$doctorId.fullName", null) ?: return null
-        return DoctorProfile(
-            doctorId = doctorId,
-            fullName = name,
-            photoUri = prefs.getString("$doctorId.photoUri", "") ?: "",
-            specialty = prefs.getString("$doctorId.specialty", "") ?: "",
-            qualifications = prefs.getString("$doctorId.qualifications", "") ?: "",
-            yearsExperience = prefs.getInt("$doctorId.yearsExperience", 0),
-            hospital = prefs.getString("$doctorId.hospital", "") ?: "",
-            languagesSpoken = prefs.getString("$doctorId.languagesSpoken", "") ?: "",
-            biography = prefs.getString("$doctorId.biography", "") ?: "",
-            availability = prefs.getString("$doctorId.availability", "") ?: "",
-            licenseNumber = prefs.getString("$doctorId.licenseNumber", "") ?: "",
-        )
-    }
+private fun DocumentSnapshot.toDoctorProfile(doctorId: String): DoctorProfile? {
+    if (!exists()) return null
+    val name = getString(Doctors.NAME) ?: return null
+    return DoctorProfile(
+        doctorId = doctorId,
+        fullName = name,
+        photoUri = getString(Doctors.PHOTO_URL).orEmpty(),
+        specialty = getString(Doctors.SPECIALTY).orEmpty(),
+        qualifications = getString(Doctors.QUALIFICATION).orEmpty(),
+        yearsExperience = (getLong(Doctors.YEARS_EXPERIENCE) ?: 0).toInt(),
+        hospital = getString(Doctors.HOSPITAL).orEmpty(),
+        languagesSpoken = getString(Doctors.LANGUAGES_SPOKEN).orEmpty(),
+        biography = getString(Doctors.BIOGRAPHY).orEmpty(),
+        availability = getString(Doctors.AVAILABILITY_TEXT).orEmpty(),
+        licenseNumber = getString(Doctors.LICENSE_NUMBER).orEmpty(),
+    )
 }

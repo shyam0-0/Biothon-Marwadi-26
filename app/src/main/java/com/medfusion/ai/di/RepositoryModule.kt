@@ -6,6 +6,7 @@ import com.medfusion.ai.data.demo.FakeAuthRepository
 import com.medfusion.ai.data.demo.FakeCareRepository
 import com.medfusion.ai.data.demo.FakeCaseRepository
 import com.medfusion.ai.data.demo.FakeConsultationRepository
+import com.medfusion.ai.data.demo.FakeDoctorProfileRepository
 import com.medfusion.ai.data.demo.FakeEmergencyRepository
 import com.medfusion.ai.data.demo.FakePassportRepository
 import com.medfusion.ai.data.demo.FakeReportRepository
@@ -16,6 +17,7 @@ import com.medfusion.ai.data.repository.AuthRepositoryImpl
 import com.medfusion.ai.data.repository.CareRepositoryImpl
 import com.medfusion.ai.data.repository.CaseRepositoryImpl
 import com.medfusion.ai.data.repository.ConsultationRepositoryImpl
+import com.medfusion.ai.data.repository.DoctorProfileRepositoryImpl
 import com.medfusion.ai.data.repository.EmergencyRepositoryImpl
 import com.medfusion.ai.data.repository.PassportRepositoryImpl
 import com.medfusion.ai.data.repository.StorageRepositoryImpl
@@ -24,6 +26,7 @@ import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CareRepository
 import com.medfusion.ai.domain.repository.CaseRepository
 import com.medfusion.ai.domain.repository.ConsultationRepository
+import com.medfusion.ai.domain.repository.DoctorProfileRepository
 import com.medfusion.ai.domain.repository.EmergencyRepository
 import com.medfusion.ai.domain.repository.PassportRepository
 import com.medfusion.ai.domain.repository.ReportRepository
@@ -98,4 +101,10 @@ object RepositoryModule {
         real: Provider<PassportRepositoryImpl>,
         fake: Provider<FakePassportRepository>,
     ): PassportRepository = if (BuildConfig.DEMO_MODE) fake.get() else real.get()
+
+    @Provides @Singleton
+    fun provideDoctorProfileRepository(
+        real: Provider<DoctorProfileRepositoryImpl>,
+        fake: Provider<FakeDoctorProfileRepository>,
+    ): DoctorProfileRepository = if (BuildConfig.DEMO_MODE) fake.get() else real.get()
 }

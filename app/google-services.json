@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "medfusion-ai-placeholder",
-    "storage_bucket": "medfusion-ai-placeholder.appspot.com"
+    "project_number": "654603851543",
+    "project_id": "medfusion-ce467",
+    "storage_bucket": "medfusion-ce467.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:654603851543:android:87c2753a7e9b7e4893c952",
         "android_client_info": {
           "package_name": "com.medfusion.ai"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "REPLACE_WITH_YOUR_FIREBASE_ANDROID_API_KEY"
+          "current_key": "AIzaSyAqjDopjDPhTARthTeb_zbhmbZVjdO1IrI"
         }
       ],
       "services": {
