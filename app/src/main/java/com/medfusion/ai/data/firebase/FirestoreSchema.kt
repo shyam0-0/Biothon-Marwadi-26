@@ -71,6 +71,11 @@ object FirestoreSchema {
         const val BIOGRAPHY = "biography"
         const val AVAILABILITY_TEXT = "availabilityText"
         const val LICENSE_NUMBER = "licenseNumber"
+
+        // Links a directory entry to the Firebase Auth account that should see
+        // it as "their" Doctor Portal — set once a doctor signs in and is
+        // matched/claims this profile. Never hardcoded.
+        const val DOCTOR_AUTH_UID = "doctorAuthUid"
     }
 
     object Prescriptions {

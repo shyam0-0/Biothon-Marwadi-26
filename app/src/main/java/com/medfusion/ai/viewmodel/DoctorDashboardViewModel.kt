@@ -13,6 +13,7 @@ import com.medfusion.ai.domain.model.UserRole
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CaseRepository
+import com.medfusion.ai.domain.repository.DoctorProfileRepository
 import com.medfusion.ai.domain.repository.NotificationRepository
 import com.medfusion.ai.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -31,17 +33,30 @@ import javax.inject.Inject
 /** Backs the doctor dashboard: the urgency-sorted queue + per-patient AI pre-read. */
 @HiltViewModel
 class DoctorDashboardViewModel @Inject constructor(
-    authRepository: AuthRepository,
+    private val authRepository: AuthRepository,
     private val appointmentRepository: AppointmentRepository,
     private val caseRepository: CaseRepository,
     private val notificationRepository: NotificationRepository,
+    private val doctorProfileRepository: DoctorProfileRepository,
 ) : ViewModel() {
 
-    private val doctorId: String? = authRepository.currentUserId()
+    // Resolved from doctorAuthUid when a directory profile has been linked to
+    // this signed-in doctor; falls back to the existing doctorId == auth-uid
+    // behavior unchanged when no match exists.
+    private val _doctorId = MutableStateFlow<String?>(null)
 
-    val queue: StateFlow<List<Appointment>> =
-        (doctorId?.let { appointmentRepository.observeDoctorQueue(it) } ?: emptyFlow())
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val queue: StateFlow<List<Appointment>> = _doctorId
+        .flatMapLatest { id -> id?.let { appointmentRepository.observeDoctorQueue(it) } ?: emptyFlow() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    init {
+        viewModelScope.launch {
+            val uid = authRepository.currentUserId()
+            _doctorId.value = uid?.let { u ->
+                (doctorProfileRepository.findDoctorIdByAuthUid(u) as? Resource.Success)?.data ?: u
+            }
+        }
+    }
 
     /** Lazily-loaded pre-read cases, keyed by caseId, populated when a row expands. */
     private val _cases = MutableStateFlow<Map<String, UiState<Case>>>(emptyMap())

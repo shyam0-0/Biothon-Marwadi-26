@@ -13,4 +13,12 @@ interface DoctorProfileRepository {
     suspend fun getProfile(doctorId: String): Resource<DoctorProfile?>
 
     suspend fun saveProfile(profile: DoctorProfile): Resource<Unit>
+
+    /**
+     * Finds the directory doctorId whose `doctorAuthUid` matches [authUid] —
+     * how a signed-in doctor's Firebase Auth account resolves to their
+     * profile in the shared "doctors" directory. Null if no document has
+     * been linked to this uid yet.
+     */
+    suspend fun findDoctorIdByAuthUid(authUid: String): Resource<String?>
 }

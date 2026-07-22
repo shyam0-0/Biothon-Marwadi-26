@@ -1,6 +1,7 @@
 package com.medfusion.ai.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.medfusion.ai.BuildConfig
@@ -56,39 +57,35 @@ class AppointmentRepositoryImpl @Inject constructor(
                     times.map { AvailabilitySlot(doctorId, doctorName, date, it) }
                 }
 
-                // Demo builds: if no availability is configured, offer sensible
-                // default slots so the booking flow can be shown end-to-end.
-                if (slots.isEmpty() && BuildConfig.USE_MOCK_AI_FALLBACK) {
-                    defaultDemoSlots(date)
-                } else {
-                    slots
-                }
+                slots
             }
         }
 
     override suspend fun getDoctorsBySpecialty(specialty: String): Resource<List<Doctor>> =
         withContext(io) {
             resourceOf {
-                val snapshot = firestore.collection(Doctors.COLLECTION)
+                val exact = firestore.collection(Doctors.COLLECTION)
                     .whereEqualTo(Doctors.SPECIALTY, specialty)
                     .get()
                     .await()
-                val doctors = snapshot.documents.mapNotNull { doc ->
-                    val name = doc.getString(Doctors.NAME) ?: return@mapNotNull null
-                    Doctor(
-                        id = doc.id,
-                        name = name,
-                        specialty = doc.getString(Doctors.SPECIALTY) ?: specialty,
-                        yearsExperience = (doc.getLong(Doctors.YEARS_EXPERIENCE) ?: 0).toInt(),
-                        rating = doc.getDouble(Doctors.RATING) ?: 0.0,
-                        qualification = doc.getString(Doctors.QUALIFICATION).orEmpty(),
-                    )
+                    .documents
+                    .toDoctors()
+
+                if (exact.isNotEmpty()) {
+                    return@resourceOf exact
                 }
-                if (doctors.isEmpty() && BuildConfig.USE_MOCK_AI_FALLBACK) {
-                    demoDoctors(specialty)
-                } else {
-                    doctors
-                }
+
+                // The AI's recommended specialist is free text (e.g. "ENT
+                // Specialist", "General Practitioner") and often won't match the
+                // directory's specialty field byte-for-byte. Scan the full
+                // directory (a handful of documents) and compare loosely instead
+                // of returning nothing when only the wording differs.
+                firestore.collection(Doctors.COLLECTION)
+                    .get()
+                    .await()
+                    .documents
+                    .toDoctors()
+                    .filter { specialtyMatches(it.specialty, specialty) }
             }
         }
 
@@ -244,17 +241,48 @@ class AppointmentRepositoryImpl @Inject constructor(
             }
         }
 
-    private fun defaultDemoSlots(date: String): List<AvailabilitySlot> {
-        val demoDoctorId = "demo-doctor"
-        val demoDoctorName = "Dr. A. Sharma"
-        return DEFAULT_SLOTS.map { AvailabilitySlot(demoDoctorId, demoDoctorName, date, it) }
+    private fun List<DocumentSnapshot>.toDoctors(): List<Doctor> = mapNotNull { doc ->
+        val name = doc.getString(Doctors.NAME) ?: return@mapNotNull null
+        Doctor(
+            id = doc.id,
+            name = name,
+            specialty = doc.getString(Doctors.SPECIALTY).orEmpty(),
+            yearsExperience = (doc.getLong(Doctors.YEARS_EXPERIENCE) ?: 0).toInt(),
+            rating = doc.getDouble(Doctors.RATING) ?: 0.0,
+            qualification = doc.getString(Doctors.QUALIFICATION).orEmpty(),
+        )
     }
 
-    /** Fallback doctors for a specialty when none are configured (demo builds). */
-    private fun demoDoctors(specialty: String): List<Doctor> = listOf(
-        Doctor("demo-doctor", "Dr. A. Sharma", specialty, 12, 4.8, "MBBS, MD"),
-        Doctor("demo-doctor-2", "Dr. R. Menon", specialty, 8, 4.6, "MBBS, DNB"),
-    )
+    /**
+     * Loose specialty comparison so a free-text AI recommendation (e.g. "ENT
+     * Specialist", "General Practitioner", "Orthopaedic") still matches the
+     * directory's canonical specialty categories. Only normalizes specialty
+     * wording — never a doctor identity.
+     */
+    private fun specialtyMatches(directoryValue: String, requested: String): Boolean {
+        fun normalize(value: String) = value.trim().lowercase()
+            .removeSuffix("specialist").removeSuffix("doctor").removeSuffix("consultant").trim()
+
+        // "-ology" / "-ologist" cover most specialty pairs an AI might phrase
+        // either way (Cardiology/Cardiologist, Neurology/Neurologist, ...).
+        fun suffixForms(value: String): Set<String> = buildSet {
+            add(value)
+            if (value.endsWith("ologist")) add(value.removeSuffix("ologist") + "ology")
+            if (value.endsWith("ology")) add(value.removeSuffix("ology") + "ologist")
+        }
+
+        val a = normalize(directoryValue)
+        val b = normalize(requested)
+        if (a.isEmpty() || b.isEmpty()) return false
+        if (suffixForms(a).intersect(suffixForms(b)).isNotEmpty()) return true
+
+        val synonyms = mapOf(
+            "general physician" to setOf("general practitioner", "family medicine", "family physician", "gp"),
+            "orthopedic" to setOf("orthopedist", "orthopaedic", "orthopaedics", "orthopedics"),
+            "ent" to setOf("otolaryngologist", "otolaryngology"),
+        )
+        return synonyms[a]?.contains(b) == true || synonyms[b]?.contains(a) == true
+    }
 
     private companion object {
         // Jitsi Meet: free, no backend, rooms auto-created on first join. Swap the

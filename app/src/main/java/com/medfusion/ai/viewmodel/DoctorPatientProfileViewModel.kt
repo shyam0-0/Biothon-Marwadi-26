@@ -19,6 +19,7 @@ import com.medfusion.ai.domain.model.TimelineEvent
 import com.medfusion.ai.domain.repository.AppointmentRepository
 import com.medfusion.ai.domain.repository.AuthRepository
 import com.medfusion.ai.domain.repository.CareRepository
+import com.medfusion.ai.domain.repository.DoctorProfileRepository
 import com.medfusion.ai.domain.repository.LiveVitalsRepository
 import com.medfusion.ai.domain.repository.PassportRepository
 import com.medfusion.ai.navigation.Routes
@@ -55,11 +56,12 @@ data class DoctorPatientProfileState(
 @HiltViewModel
 class DoctorPatientProfileViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    authRepository: AuthRepository,
+    private val authRepository: AuthRepository,
     private val passportRepository: PassportRepository,
     private val careRepository: CareRepository,
     private val appointmentRepository: AppointmentRepository,
     private val aiService: AiService,
+    private val doctorProfileRepository: DoctorProfileRepository,
     liveVitalsRepository: LiveVitalsRepository,
 ) : ViewModel() {
 
@@ -67,7 +69,6 @@ class DoctorPatientProfileViewModel @Inject constructor(
         "DoctorPatientProfileViewModel requires a patientId"
     }
     private val patientName: String = savedStateHandle.get<String>(Routes.Args.PATIENT_NAME) ?: "Patient"
-    private val doctorId: String? = authRepository.currentUserId()
 
     private val _uiState = MutableStateFlow(DoctorPatientProfileState(patientName = patientName))
     val uiState: StateFlow<DoctorPatientProfileState> = _uiState.asStateFlow()
@@ -118,7 +119,14 @@ class DoctorPatientProfileViewModel @Inject constructor(
                 }
             }
 
-            doctorId?.let { id ->
+            // Resolved from doctorAuthUid when a directory profile has been
+            // linked to this signed-in doctor; falls back to the existing
+            // doctorId == auth-uid behavior unchanged when no match exists.
+            val uid = authRepository.currentUserId()
+            val resolvedDoctorId = uid?.let { u ->
+                (doctorProfileRepository.findDoctorIdByAuthUid(u) as? Resource.Success)?.data ?: u
+            }
+            resolvedDoctorId?.let { id ->
                 val consultations = appointmentRepository.observeDoctorQueue(id)
                     .firstOrNull().orEmpty()
                     .filter { it.patientId == patientId && it.status == AppointmentStatus.COMPLETED }

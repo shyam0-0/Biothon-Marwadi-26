@@ -36,6 +36,12 @@ class FakeDoctorProfileRepository @Inject constructor(
     override suspend fun getProfile(doctorId: String): Resource<DoctorProfile?> =
         Resource.Success(read(doctorId))
 
+    // Demo Mode has exactly one doctor, whose id already equals the (fake)
+    // signed-in uid — no separate matching needed, unlike the Firestore
+    // directory shared by real doctors.
+    override suspend fun findDoctorIdByAuthUid(authUid: String): Resource<String?> =
+        Resource.Success(authUid)
+
     override suspend fun saveProfile(profile: DoctorProfile): Resource<Unit> {
         val id = profile.doctorId
         prefs.edit()

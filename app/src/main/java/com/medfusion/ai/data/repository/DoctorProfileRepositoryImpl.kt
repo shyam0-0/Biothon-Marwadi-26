@@ -68,8 +68,27 @@ class DoctorProfileRepositoryImpl @Inject constructor(
                 )
                 // Merge: preserves fields this profile doesn't own (e.g. RATING) and
                 // any directory doc that already existed for the booking list.
+                // Deliberately does NOT write DOCTOR_AUTH_UID: profile.doctorId is
+                // the resolved directory id (which may already have been mapped
+                // from the real auth uid), not the auth uid itself. Writing it
+                // here would overwrite a claimed profile's real doctorAuthUid
+                // with its own document id, breaking the mapping for that doctor.
                 doc(profile.doctorId).set(data, SetOptions.merge()).await()
                 Unit
+            }
+        }
+
+    override suspend fun findDoctorIdByAuthUid(authUid: String): Resource<String?> =
+        withContext(io) {
+            resourceOf {
+                firestore.collection(Doctors.COLLECTION)
+                    .whereEqualTo(Doctors.DOCTOR_AUTH_UID, authUid)
+                    .limit(1)
+                    .get()
+                    .await()
+                    .documents
+                    .firstOrNull()
+                    ?.id
             }
         }
 }

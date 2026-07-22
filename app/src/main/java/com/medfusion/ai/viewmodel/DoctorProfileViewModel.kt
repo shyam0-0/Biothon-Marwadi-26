@@ -38,10 +38,15 @@ class DoctorProfileViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val id = doctorId
-            if (id == null) {
+            val uid = doctorId
+            if (uid == null) {
                 _uiState.update { it.copy(loading = false, error = AppError.Unauthorized()) }
             } else {
+                // A pre-seeded directory profile claimed via doctorAuthUid takes
+                // priority; otherwise fall back to the existing doctorId ==
+                // auth-uid scheme unchanged.
+                val id = (profileRepository.findDoctorIdByAuthUid(uid) as? Resource.Success)
+                    ?.data ?: uid
                 val existing = (profileRepository.getProfile(id) as? Resource.Success)?.data
                 // Prefill the name from the signed-in account when no profile exists yet.
                 val initial = existing ?: DoctorProfile(

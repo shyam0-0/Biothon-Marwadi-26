@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.EventNote
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.HealthAndSafety
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.MedicalServices
@@ -33,16 +34,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medfusion.ai.domain.model.PatientPassport
 import com.medfusion.ai.ui.components.ErrorView
-import com.medfusion.ai.ui.components.LiveVitalsCard
+import com.medfusion.ai.ui.components.InlineErrorCard
 import com.medfusion.ai.ui.components.LoadingView
 import com.medfusion.ai.ui.components.MedFusionCard
+import com.medfusion.ai.ui.components.MedFusionChip
 import com.medfusion.ai.ui.components.MedFusionScaffold
 import com.medfusion.ai.ui.components.SeverityChip
 import com.medfusion.ai.ui.theme.Sizes
 import com.medfusion.ai.ui.theme.Spacing
 import com.medfusion.ai.ui.theme.semantic
 import com.medfusion.ai.viewmodel.DoctorPatientProfileViewModel
+import com.medfusion.ai.viewmodel.LiveVitalsCardState
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -83,9 +87,9 @@ fun DoctorPatientProfileScreen(
                     .padding(horizontal = Sizes.screenPadding, vertical = Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                LiveVitalsCard(state = state.liveVitals, emptyMessage = "No vitals received yet.")
-
                 state.passport?.let { PassportSummary(it) }
+
+                PatientLiveVitalsSection(state.liveVitals)
 
                 state.progress?.let { progress ->
                     Section("Recovery progress", Icons.Outlined.MonitorHeart,
@@ -251,3 +255,89 @@ private fun Section(
 
 private fun formatDate(millis: Long): String =
     SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(millis))
+
+/**
+ * Latest ESP32 vitals for this patient — same [LiveVitalsCardState] produced
+ * by the same [com.medfusion.ai.domain.repository.LiveVitalsRepository] the
+ * patient dashboard observes; only the doctor-facing presentation differs.
+ */
+@Composable
+private fun PatientLiveVitalsSection(state: LiveVitalsCardState) {
+    Section("Latest Live Vitals", Icons.Outlined.Favorite) {
+        when (state) {
+            is LiveVitalsCardState.Loading -> Text(
+                "Waiting for live vitals…",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            is LiveVitalsCardState.Empty -> Text(
+                "No live vitals available.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            is LiveVitalsCardState.Error -> InlineErrorCard(error = state.error)
+            is LiveVitalsCardState.Data -> {
+                val vitals = state.vitals
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xl)) {
+                    VitalStat(emoji = "❤️", label = "Heart Rate", value = "${vitals.heartRate} BPM")
+                    VitalStat(emoji = "🫁", label = "SpO₂", value = "${vitals.spo2}%")
+                }
+                Spacer(Modifier.height(Spacing.sm))
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    HeartRateStatusChip(vitals.heartRate)
+                    Spo2StatusChip(vitals.spo2)
+                }
+                vitals.updatedAtMillis?.let { millis ->
+                    Spacer(Modifier.height(Spacing.sm))
+                    VitalStat(emoji = "🕒", label = "Last Updated", value = formatVitalsTimestamp(millis))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VitalStat(emoji: String, label: String, value: String) {
+    Column {
+        Text(
+            "$emoji $label",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(value, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+    }
+}
+
+/** Same 50-120 bpm normal range already used for heart-rate monitoring in [com.medfusion.ai.viewmodel.VitalsViewModel]. */
+@Composable
+private fun HeartRateStatusChip(bpm: Int) {
+    val s = MaterialTheme.semantic
+    val (label, content, container) = when {
+        bpm < 50 -> Triple("Low", s.riskYellow, s.riskYellowContainer)
+        bpm > 120 -> Triple("Elevated", s.riskRed, s.riskRedContainer)
+        else -> Triple("Normal", s.riskGreen, s.riskGreenContainer)
+    }
+    MedFusionChip(text = label, content = content, container = container)
+}
+
+/** Standard clinical pulse-oximetry bands (>=95% normal, 90-94% monitor, <90% critical). */
+@Composable
+private fun Spo2StatusChip(percent: Int) {
+    val s = MaterialTheme.semantic
+    val (label, content, container) = when {
+        percent < 90 -> Triple("Critical", s.riskRed, s.riskRedContainer)
+        percent < 95 -> Triple("Monitor", s.riskYellow, s.riskYellowContainer)
+        else -> Triple("Normal", s.riskGreen, s.riskGreenContainer)
+    }
+    MedFusionChip(text = label, content = content, container = container)
+}
+
+private fun formatVitalsTimestamp(millis: Long): String {
+    val now = Calendar.getInstance()
+    val then = Calendar.getInstance().apply { timeInMillis = millis }
+    val isToday = now.get(Calendar.YEAR) == then.get(Calendar.YEAR) &&
+        now.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR)
+    val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(millis))
+    val day = if (isToday) "Today" else SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(millis))
+    return "$day • $time"
+}
